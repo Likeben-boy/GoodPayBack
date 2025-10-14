@@ -15,9 +15,9 @@ export const userValidation = {
       .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
       .withMessage('密码必须包含大小写字母和数字'),
     body('email')
-      .optional()
       .isEmail()
-      .withMessage('请输入有效的邮箱地址'),
+      .withMessage('请输入有效的邮箱地址')
+      .normalizeEmail(),
     body('phone')
       .optional()
       .matches(/^1[3-9]\d{9}$/)

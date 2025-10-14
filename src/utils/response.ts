@@ -112,12 +112,17 @@ class ApiResponseBuilder {
     data?: T,
     statusCode: number = 200
   ): ApiResponse<T> {
-    return {
+    const response: ApiResponse<T> = {
       status: 'success',
       message,
-      data,
       timestamp: new Date().toISOString()
     };
+
+    if (data !== undefined) {
+      response.data = data;
+    }
+
+    return response;
   }
 
   /**
@@ -152,7 +157,7 @@ class ApiResponseBuilder {
     items: T[],
     pagination: PaginationInfo,
     message: string = 'Success'
-  ): ApiResponse<T> {
+  ): ApiResponse<T[]> {
     return {
       status: 'success',
       message,

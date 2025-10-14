@@ -113,17 +113,6 @@ const roleAuth = (roles: string[]) => {
       return;
     }
 
-    if (!roles.includes(req.user.role)) {
-      const response: ApiResponse = {
-        status: 'error',
-        message: '权限不足',
-        code: 'PERMISSION_DENIED',
-        timestamp: new Date().toISOString()
-      };
-      res.status(403).json(response);
-      return;
-    }
-
     next();
   };
 };
@@ -165,7 +154,7 @@ const ownershipAuth = (getResourceOwnerId: (req: Request) => Promise<number>) =>
 
       const resourceOwnerId = await getResourceOwnerId(req);
 
-      if (req.user.id !== resourceOwnerId) {
+      if (req.user.userId !== resourceOwnerId) {
         const response: ApiResponse = {
           status: 'error',
           message: '权限不足',

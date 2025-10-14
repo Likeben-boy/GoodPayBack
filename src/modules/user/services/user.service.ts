@@ -1,11 +1,6 @@
-import userModel from '../models/user.model';
-import addressModel from '../models/address.model';
+import { prisma } from '../../../database/prisma';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import config from '../../../config';
-import { generateToken, verifyToken } from '../../../utils/jwt';
-import { sendEmail, sendSMS } from '../../../utils/notification';
-import logger from '../../../utils/logger';
+import { logger } from '../../../utils/logger';
 import {
   User,
   CreateUserInput,
@@ -27,14 +22,18 @@ class UserService {
    */
   async register(userData: CreateUserInput): Promise<LoginResult> {
     // 检查用户名是否已存在
-    const existingUser = await userModel.findByUsername(userData.username);
+    const existingUser = await prisma.users.findUnique({
+      where: { username: userData.username }
+    });
     if (existingUser) {
       throw { message: '用户名已存在', code: 'USERNAME_EXISTS' };
     }
 
     // 检查邮箱是否已存在
     if (userData.email) {
-      const existingEmail = await userModel.findByEmail(userData.email);
+      const existingEmail = await prisma.users.findUnique({
+        where: { email: userData.email }
+      });
       if (existingEmail) {
         throw { message: '邮箱已存在', code: 'EMAIL_EXISTS' };
       }
@@ -42,39 +41,46 @@ class UserService {
 
     // 检查手机号是否已存在
     if (userData.phone) {
-      const existingPhone = await userModel.findByPhone(userData.phone);
+      const existingPhone = await prisma.users.findUnique({
+        where: { phone: userData.phone }
+      });
       if (existingPhone) {
         throw { message: '手机号已存在', code: 'PHONE_EXISTS' };
       }
     }
 
     // 加密密码
-    const hashedPassword = await bcrypt.hash(userData.password, config.bcryptSaltRounds);
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
 
     // 创建用户
-    const userId = await userModel.create({
-      ...userData,
-      password: hashedPassword,
-      nickname: userData.nickname || userData.username,
-      status: 'active'
+    const user = await prisma.users.create({
+      data: {
+        username: userData.username,
+        email: userData.email || '',
+        phone: userData.phone || null,
+        password: hashedPassword,
+        nickname: userData.nickname || userData.username,
+        avatar: userData.avatar || null,
+        status: 'active'
+      }
     });
 
     // 生成JWT令牌
-    const tokens = generateToken(userId);
+    const tokens = this.generateToken(user.id);
 
     // 记录日志
-    logger.info(`User registered: ${userId}`);
-
-    const user = await userModel.findById(userId);
-    if (!user) {
-      throw new Error('用户创建失败');
-    }
+    logger.info(`User registered: ${user.id}`, {
+      userId: user.id,
+      username: user.username,
+      email: user.email,
+      ip: 'unknown' // 可以从请求中获取
+    });
 
     // 移除密码字段
-    const { password: _, ...userWithoutPassword } = user as any;
+    const { password: _, ...userWithoutPassword } = user;
 
     return {
-      userId,
+      userId: user.id,
       tokens,
       user: userWithoutPassword
     };
@@ -88,15 +94,21 @@ class UserService {
   async login(loginData: UserLoginInput): Promise<LoginResult> {
     const { username, password, email, phone } = loginData;
 
-    let user: User | null = null;
+    let user: any = null;
 
     // 根据不同的登录方式查找用户
     if (username) {
-      user = await userModel.findByUsername(username);
+      user = await prisma.users.findUnique({
+        where: { username }
+      });
     } else if (email) {
-      user = await userModel.findByEmail(email);
+      user = await prisma.users.findUnique({
+        where: { email }
+      });
     } else if (phone) {
-      user = await userModel.findByPhone(phone);
+      user = await prisma.users.findUnique({
+        where: { phone }
+      });
     } else {
       throw { message: '请提供用户名、邮箱或手机号', code: 'MISSING_CREDENTIALS' };
     }
@@ -110,19 +122,32 @@ class UserService {
     }
 
     // 验证密码
-    const isPasswordValid = await bcrypt.compare(password, (user as any).password);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw { message: '密码错误', code: 'INVALID_PASSWORD' };
     }
 
+    // 更新最后登录时间和IP
+    await prisma.users.update({
+      where: { id: user.id },
+      data: {
+        lastLoginAt: new Date(),
+        lastLoginIp: 'unknown' // 可以从请求中获取
+      }
+    });
+
     // 生成JWT令牌
-    const tokens = generateToken(user.id);
+    const tokens = this.generateToken(user.id);
 
     // 记录日志
-    logger.info(`User logged in: ${user.id}`);
+    logger.info(`User logged in: ${user.id}`, {
+      userId: user.id,
+      username: user.username,
+      ip: 'unknown'
+    });
 
     // 移除密码字段
-    const { password: _, ...userWithoutPassword } = user as any;
+    const { password: _, ...userWithoutPassword } = user;
 
     return {
       userId: user.id,
@@ -137,7 +162,7 @@ class UserService {
    */
   async logout(userId: number): Promise<boolean> {
     // 这里可以添加令牌黑名单等逻辑
-    logger.info(`User logged out: ${userId}`);
+    logger.info(`User logged out: ${userId}`, { userId });
     return true;
   }
 
@@ -150,14 +175,16 @@ class UserService {
     const { refreshToken } = tokenData;
 
     try {
-      const decoded = verifyToken(refreshToken);
-      const user = await userModel.findById(decoded.userId);
+      const decoded = this.verifyToken(refreshToken);
+      const user = await prisma.users.findUnique({
+        where: { id: decoded.userId }
+      });
 
       if (!user || user.status !== 'active') {
         throw { message: '用户不存在或已被禁用', code: 'USER_NOT_FOUND' };
       }
 
-      const tokens = generateToken(user.id);
+      const tokens = this.generateToken(user.id);
       return tokens;
     } catch (error) {
       throw { message: '刷新令牌无效或已过期', code: 'INVALID_REFRESH_TOKEN' };
@@ -170,17 +197,22 @@ class UserService {
    * @returns 用户信息
    */
   async getUserProfile(userId: number): Promise<User & { addressCount: number }> {
-    const user = await userModel.findById(userId);
+    const user = await prisma.users.findUnique({
+      where: { id: userId }
+    });
+
     if (!user) {
       throw { message: '用户不存在', code: 'USER_NOT_FOUND' };
     }
 
     // 获取用户地址数量
-    const addresses = await addressModel.findByUserId(userId);
+    const addressCount = await prisma.addresses.count({
+      where: { userId }
+    });
 
     return {
       ...user,
-      addressCount: addresses.length
+      addressCount
     };
   }
 
@@ -192,22 +224,17 @@ class UserService {
    */
   async updateProfile(userId: number, updateData: UpdateUserInput): Promise<User> {
     // 不允许更新的字段
-    const forbiddenFields = ['password', 'username', 'status', 'created_at'];
+    const forbiddenFields = ['password', 'username', 'status', 'createdAt', 'updatedAt'];
     const cleanData = { ...updateData };
 
     forbiddenFields.forEach(field => {
       delete (cleanData as any)[field];
     });
 
-    const affectedRows = await userModel.update(userId, cleanData);
-    if (affectedRows === 0) {
-      throw { message: '更新失败', code: 'UPDATE_FAILED' };
-    }
-
-    const updatedUser = await userModel.findById(userId);
-    if (!updatedUser) {
-      throw { message: '用户不存在', code: 'USER_NOT_FOUND' };
-    }
+    const updatedUser = await prisma.users.update({
+      where: { id: userId },
+      data: cleanData
+    });
 
     return updatedUser;
   }
@@ -220,25 +247,31 @@ class UserService {
   async changePassword(userId: number, passwordData: ChangePasswordInput): Promise<void> {
     const { oldPassword, newPassword } = passwordData;
 
-    const user = await userModel.findById(userId);
+    const user = await prisma.users.findUnique({
+      where: { id: userId }
+    });
+
     if (!user) {
       throw { message: '用户不存在', code: 'USER_NOT_FOUND' };
     }
 
     // 验证旧密码
-    const isOldPasswordValid = await bcrypt.compare(oldPassword, (user as any).password);
+    const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password);
     if (!isOldPasswordValid) {
       throw { message: '旧密码错误', code: 'INVALID_OLD_PASSWORD' };
     }
 
     // 加密新密码
-    const hashedPassword = await bcrypt.hash(newPassword, config.bcryptSaltRounds);
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     // 更新密码
-    await userModel.update(userId, { password: hashedPassword });
+    await prisma.users.update({
+      where: { id: userId },
+      data: { password: hashedPassword }
+    });
 
     // 记录日志
-    logger.info(`User password changed: ${userId}`);
+    logger.info(`User password changed: ${userId}`, { userId });
   }
 
   /**
@@ -246,24 +279,27 @@ class UserService {
    * @param resetData - 重置密码数据
    */
   async resetPassword(resetData: ResetPasswordInput): Promise<void> {
-    const { email, code, newPassword } = resetData;
+    const { email, newPassword } = resetData;
 
-    // 验证邮箱验证码
-    // 这里应该调用验证码验证服务
+    const user = await prisma.users.findUnique({
+      where: { email }
+    });
 
-    const user = await userModel.findByEmail(email);
     if (!user) {
       throw { message: '用户不存在', code: 'USER_NOT_FOUND' };
     }
 
     // 加密新密码
-    const hashedPassword = await bcrypt.hash(newPassword, config.bcryptSaltRounds);
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     // 更新密码
-    await userModel.update(user.id, { password: hashedPassword });
+    await prisma.users.update({
+      where: { id: user.id },
+      data: { password: hashedPassword }
+    });
 
     // 记录日志
-    logger.info(`User password reset: ${user.id}`);
+    logger.info(`User password reset: ${user.id}`, { userId: user.id });
   }
 
   /**
@@ -274,7 +310,10 @@ class UserService {
    */
   async uploadAvatar(userId: number, file: Express.Multer.File): Promise<{ avatarUrl: string }> {
     const avatarUrl = `/uploads/avatars/${file.filename}`;
-    await userModel.update(userId, { avatar: avatarUrl });
+    await prisma.users.update({
+      where: { id: userId },
+      data: { avatar: avatarUrl }
+    });
     return { avatarUrl };
   }
 
@@ -284,7 +323,10 @@ class UserService {
    * @returns 地址列表
    */
   async getUserAddresses(userId: number): Promise<any[]> {
-    return await addressModel.findByUserId(userId);
+    return await prisma.addresses.findMany({
+      where: { userId },
+      orderBy: { isDefault: 'desc' }
+    });
   }
 
   /**
@@ -293,7 +335,12 @@ class UserService {
    * @returns 默认地址
    */
   async getDefaultAddress(userId: number): Promise<any | null> {
-    return await addressModel.findDefaultByUserId(userId);
+    return await prisma.addresses.findFirst({
+      where: {
+        userId,
+        isDefault: true
+      }
+    });
   }
 
   /**
@@ -303,17 +350,22 @@ class UserService {
    * @returns 创建的地址
    */
   async createAddress(userId: number, addressData: CreateAddressInput): Promise<any> {
-    const addressId = await addressModel.create({
-      userId,
-      ...addressData
-    });
-
-    // 如果设置为默认地址，需要处理其他地址
+    // 如果设置为默认地址，需要先取消其他默认地址
     if (addressData.isDefault) {
-      await addressModel.setDefault(userId, addressId);
+      await prisma.addresses.updateMany({
+        where: { userId },
+        data: { isDefault: false }
+      });
     }
 
-    return await addressModel.findById(addressId);
+    const address = await prisma.addresses.create({
+      data: {
+        userId,
+        ...addressData
+      }
+    });
+
+    return address;
   }
 
   /**
@@ -324,18 +376,28 @@ class UserService {
    * @returns 更新后的地址
    */
   async updateAddress(userId: number, addressId: number, updateData: UpdateAddressInput): Promise<any> {
-    const address = await addressModel.findById(addressId);
-    if (!address || address.userId !== userId) {
+    const address = await prisma.addresses.findFirst({
+      where: { id: addressId, userId }
+    });
+
+    if (!address) {
       throw { message: '地址不存在', code: 'ADDRESS_NOT_FOUND' };
     }
 
-    // 如果设置为默认地址，需要处理其他地址
+    // 如果设置为默认地址，需要先取消其他默认地址
     if (updateData.isDefault) {
-      await addressModel.setDefault(userId, addressId);
+      await prisma.addresses.updateMany({
+        where: { userId },
+        data: { isDefault: false }
+      });
     }
 
-    await addressModel.update(addressId, updateData);
-    return await addressModel.findById(addressId);
+    const updatedAddress = await prisma.addresses.update({
+      where: { id: addressId },
+      data: updateData
+    });
+
+    return updatedAddress;
   }
 
   /**
@@ -344,12 +406,27 @@ class UserService {
    * @param addressId - 地址ID
    */
   async setDefaultAddress(userId: number, addressId: number): Promise<void> {
-    const address = await addressModel.findById(addressId);
-    if (!address || address.userId !== userId) {
+    const address = await prisma.addresses.findFirst({
+      where: { id: addressId, userId }
+    });
+
+    if (!address) {
       throw { message: '地址不存在', code: 'ADDRESS_NOT_FOUND' };
     }
 
-    await addressModel.setDefault(userId, addressId);
+    // 使用事务来确保数据一致性
+    await prisma.$transaction([
+      // 取消所有默认地址
+      prisma.addresses.updateMany({
+        where: { userId },
+        data: { isDefault: false }
+      }),
+      // 设置新的默认地址
+      prisma.addresses.update({
+        where: { id: addressId },
+        data: { isDefault: true }
+      })
+    ]);
   }
 
   /**
@@ -358,12 +435,17 @@ class UserService {
    * @param addressId - 地址ID
    */
   async deleteAddress(userId: number, addressId: number): Promise<void> {
-    const address = await addressModel.findById(addressId);
-    if (!address || address.userId !== userId) {
+    const address = await prisma.addresses.findFirst({
+      where: { id: addressId, userId }
+    });
+
+    if (!address) {
       throw { message: '地址不存在', code: 'ADDRESS_NOT_FOUND' };
     }
 
-    await addressModel.delete(addressId);
+    await prisma.addresses.delete({
+      where: { id: addressId }
+    });
   }
 
   /**
@@ -372,7 +454,52 @@ class UserService {
    * @param addressIds - 地址ID数组
    */
   async batchDeleteAddresses(userId: number, addressIds: number[]): Promise<void> {
-    await addressModel.batchDelete(userId, addressIds);
+    await prisma.addresses.deleteMany({
+      where: {
+        id: { in: addressIds },
+        userId
+      }
+    });
+  }
+
+  /**
+   * 生成JWT令牌
+   * @param userId - 用户ID
+   * @returns JWT令牌对
+   */
+  private generateToken(userId: number): TokenPair {
+    const jwt = require('jsonwebtoken');
+    const config = require('../../../config');
+
+    const accessToken = jwt.sign(
+      { userId, type: 'access' },
+      config.jwt.secret,
+      { expiresIn: config.jwt.expiresIn || '15m' }
+    );
+
+    const refreshToken = jwt.sign(
+      { userId, type: 'refresh' },
+      config.jwt.refreshSecret,
+      { expiresIn: config.jwt.refreshExpiresIn || '7d' }
+    );
+
+    return {
+      accessToken,
+      refreshToken,
+      expiresIn: config.jwt.expiresIn || '15m'
+    };
+  }
+
+  /**
+   * 验证JWT令牌
+   * @param token - JWT令牌
+   * @returns 解码后的令牌数据
+   */
+  private verifyToken(token: string): any {
+    const jwt = require('jsonwebtoken');
+    const config = require('../../../config');
+
+    return jwt.verify(token, config.jwt.refreshSecret);
   }
 }
 

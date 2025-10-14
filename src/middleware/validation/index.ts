@@ -19,11 +19,23 @@ const validate = (validations: ValidationChain[]) => {
     }
 
     // 格式化错误信息
-    const formattedErrors: ValidationError[] = errors.array().map(error => ({
-      field: error.path || error.param,
-      message: error.msg,
-      value: error.value
-    }));
+    const formattedErrors: ValidationError[] = errors.array().map(error => {
+      // 处理字段验证错误
+      if (error.type === 'field') {
+        return {
+          field: error.path,
+          message: error.msg,
+          value: error.value
+        };
+      }
+
+      // 处理其他类型的验证错误（unknown_fields, alternative等）
+      return {
+        field: error.type,
+        message: error.msg,
+        value: undefined
+      };
+    });
 
     const response: ApiResponse = {
       status: 'error',

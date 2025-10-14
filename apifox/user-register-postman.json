@@ -1,0 +1,383 @@
+{
+  "info": {
+    "name": "用户注册接口测试",
+    "description": "测试用户注册功能",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "user-register-collection",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "item": [
+    {
+      "name": "用户注册 - 成功案例",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"testuser123\",\n  \"password\": \"Test123456\",\n  \"email\": \"test@example.com\",\n  \"phone\": \"13812345678\",\n  \"nickname\": \"测试用户\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "register"
+          ]
+        },
+        "description": "测试完整的用户注册信息"
+      },
+      "response": []
+    },
+    {
+      "name": "用户注册 - 最小必填字段",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"minuser\",\n  \"password\": \"Test123\",\n  \"email\": \"min@test.com\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "register"
+          ]
+        },
+        "description": "测试只包含必填字段的最小注册请求"
+      },
+      "response": []
+    },
+    {
+      "name": "用户注册 - 用户名过短",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"ab\",\n  \"password\": \"Test123456\",\n  \"email\": \"test@example.com\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "register"
+          ]
+        },
+        "description": "测试用户名长度小于3个字符，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "用户注册 - 用户名过长",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"verylongusernamethatexceedslimit\",\n  \"password\": \"Test123456\",\n  \"email\": \"test@example.com\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "register"
+          ]
+        },
+        "description": "测试用户名长度超过20个字符，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "用户注册 - 密码格式错误（缺少大写字母）",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"testuser123\",\n  \"password\": \"test123456\",\n  \"email\": \"test@example.com\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "register"
+          ]
+        },
+        "description": "测试密码缺少大写字母，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "用户注册 - 密码格式错误（缺少数字）",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"testuser123\",\n  \"password\": \"TestPassword\",\n  \"email\": \"test@example.com\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "register"
+          ]
+        },
+        "description": "测试密码缺少数字，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "用户注册 - 邮箱格式错误",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"testuser123\",\n  \"password\": \"Test123456\",\n  \"email\": \"invalid-email\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "register"
+          ]
+        },
+        "description": "测试无效的邮箱格式，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "用户注册 - 手机号格式错误",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"testuser123\",\n  \"password\": \"Test123456\",\n  \"email\": \"test@example.com\",\n  \"phone\": \"12345678901\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "register"
+          ]
+        },
+        "description": "测试无效的手机号格式，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "用户注册 - 缺少必填字段（用户名）",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"password\": \"Test123456\",\n  \"email\": \"test@example.com\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "register"
+          ]
+        },
+        "description": "测试缺少用户名字段，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "用户注册 - 缺少必填字段（密码）",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"testuser123\",\n  \"email\": \"test@example.com\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "register"
+          ]
+        },
+        "description": "测试缺少密码字段，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "用户注册 - 缺少必填字段（邮箱）",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"testuser123\",\n  \"password\": \"Test123456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "register"
+          ]
+        },
+        "description": "测试缺少邮箱字段，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "用户注册 - 用户名包含特殊字符",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"test@user#123\",\n  \"password\": \"Test123456\",\n  \"email\": \"test@example.com\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "register"
+          ]
+        },
+        "description": "测试用户名包含特殊字符，应该返回验证错误"
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string",
+      "description": "API基础URL"
+    }
+  ]
+}

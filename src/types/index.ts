@@ -17,6 +17,10 @@ export interface ApiResponse<T = any> {
   timestamp: string;
   /** 验证错误列表，验证失败时使用 */
   errors?: ValidationError[];
+  /** 分页信息，分页数据时使用 */
+  pagination?: PaginationInfo;
+  /** 错误详情，错误响应时使用 */
+  details?: any;
 }
 
 /**
@@ -82,6 +86,8 @@ export interface JwtPayload {
   userId: number;
   /** 用户名 */
   username: string;
+  /** 用户角色 */
+  role?: string;
   /** JWT签发时间戳（Unix时间戳） */
   iat: number;
   /** JWT过期时间戳（Unix时间戳），可选 */
@@ -92,35 +98,10 @@ export interface JwtPayload {
  * 数据库配置接口
  */
 export interface DatabaseConfig {
-  /** 数据库主机地址 */
-  host: string;
-  /** 数据库端口号 */
-  port: number;
-  /** 数据库用户名 */
-  user: string;
-  /** 数据库密码 */
-  password: string;
-  /** 数据库名称 */
-  database: string;
-  /** 连接池最小连接数 */
-  poolMin: number;
-  /** 连接池最大连接数 */
-  poolMax: number;
+  /** 数据库连接URL */
+  url: string;
 }
 
-/**
- * Redis缓存配置接口
- */
-export interface RedisConfig {
-  /** Redis服务器主机地址 */
-  host: string;
-  /** Redis服务器端口号 */
-  port: number;
-  /** Redis密码，可选（无密码时可不提供） */
-  password?: string;
-  /** Redis数据库编号（0-15） */
-  db: number;
-}
 
 /**
  * JWT令牌配置接口
@@ -128,6 +109,8 @@ export interface RedisConfig {
 export interface JwtConfig {
   /** JWT签名密钥 */
   secret: string;
+  /** JWT刷新令牌密钥 */
+  refreshSecret: string;
   /** 访问令牌过期时间（如：'1h'、'7d'或秒数） */
   expiresIn: string | number;
   /** 刷新令牌过期时间（如：'7d'、'30d'或秒数） */
@@ -146,8 +129,6 @@ export interface AppConfig {
   frontendUrl: string;
   /** 数据库配置 */
   db: DatabaseConfig;
-  /** Redis配置 */
-  redis: RedisConfig;
   /** JWT配置 */
   jwt: JwtConfig;
   /** 文件上传存储路径 */

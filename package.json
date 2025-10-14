@@ -2,11 +2,11 @@
   "name": "GoodPayBack",
   "version": "1.0.0",
   "description": "外卖点餐系统后端API - 基于Express.js和TypeScript构建",
-  "main": "dist/index.js",
+  "main": "dist/app.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only --clear src/index.ts",
+    "dev": "ts-node-dev --respawn --transpile-only --clear src/app.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node dist/app.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist",
@@ -41,8 +41,6 @@
     "multer": "^1.4.5-lts.1",
     "mysql2": "^3.6.5",
     "nodemailer": "^6.9.7",
-    "rate-limit-redis": "^4.2.0",
-    "redis": "^4.6.11",
     "winston": "^3.11.0"
   },
   "devDependencies": {

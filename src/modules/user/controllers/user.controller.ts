@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import userService from '../services/user.service';
 import { successResponse, errorResponse } from '../../../utils/response';
-import { ApiResponse } from '../../../types';
 
 class UserController {
   /**
@@ -14,7 +13,7 @@ class UserController {
       const result = await userService.register(req.body);
       successResponse(res, '注册成功', result, 201);
     } catch (error: any) {
-      errorResponse(res, error.message, error.code || 400);
+      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
     }
   }
 
@@ -28,7 +27,7 @@ class UserController {
       const result = await userService.login(req.body);
       successResponse(res, '登录成功', result);
     } catch (error: any) {
-      errorResponse(res, error.message, error.code || 400);
+      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
     }
   }
 
@@ -39,10 +38,10 @@ class UserController {
    */
   async logout(req: Request, res: Response): Promise<void> {
     try {
-      await userService.logout(req.user!.id);
+      await userService.logout(req.user!.userId);
       successResponse(res, '登出成功');
     } catch (error: any) {
-      errorResponse(res, error.message, error.code || 400);
+      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
     }
   }
 
@@ -56,7 +55,7 @@ class UserController {
       const result = await userService.refreshToken(req.body);
       successResponse(res, '令牌刷新成功', result);
     } catch (error: any) {
-      errorResponse(res, error.message, error.code || 400);
+      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
     }
   }
 
@@ -67,10 +66,10 @@ class UserController {
    */
   async getProfile(req: Request, res: Response): Promise<void> {
     try {
-      const result = await userService.getUserProfile(req.user!.id);
+      const result = await userService.getUserProfile(req.user!.userId);
       successResponse(res, '获取用户信息成功', result);
     } catch (error: any) {
-      errorResponse(res, error.message, error.code || 400);
+      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
     }
   }
 
@@ -81,10 +80,10 @@ class UserController {
    */
   async updateProfile(req: Request, res: Response): Promise<void> {
     try {
-      const result = await userService.updateProfile(req.user!.id, req.body);
+      const result = await userService.updateProfile(req.user!.userId, req.body);
       successResponse(res, '更新用户信息成功', result);
     } catch (error: any) {
-      errorResponse(res, error.message, error.code || 400);
+      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
     }
   }
 
@@ -95,10 +94,10 @@ class UserController {
    */
   async changePassword(req: Request, res: Response): Promise<void> {
     try {
-      await userService.changePassword(req.user!.id, req.body);
+      await userService.changePassword(req.user!.userId, req.body);
       successResponse(res, '密码修改成功');
     } catch (error: any) {
-      errorResponse(res, error.message, error.code || 400);
+      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
     }
   }
 
@@ -112,7 +111,7 @@ class UserController {
       await userService.resetPassword(req.body);
       successResponse(res, '密码重置成功');
     } catch (error: any) {
-      errorResponse(res, error.message, error.code || 400);
+      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
     }
   }
 
@@ -126,10 +125,10 @@ class UserController {
       if (!req.file) {
         throw new Error('请上传头像文件');
       }
-      const result = await userService.uploadAvatar(req.user!.id, req.file);
+      const result = await userService.uploadAvatar(req.user!.userId, req.file);
       successResponse(res, '头像上传成功', result);
     } catch (error: any) {
-      errorResponse(res, error.message, error.code || 400);
+      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
     }
   }
 
@@ -140,10 +139,10 @@ class UserController {
    */
   async getAddresses(req: Request, res: Response): Promise<void> {
     try {
-      const result = await userService.getUserAddresses(req.user!.id);
+      const result = await userService.getUserAddresses(req.user!.userId);
       successResponse(res, '获取地址列表成功', result);
     } catch (error: any) {
-      errorResponse(res, error.message, error.code || 400);
+      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
     }
   }
 
@@ -154,10 +153,10 @@ class UserController {
    */
   async getDefaultAddress(req: Request, res: Response): Promise<void> {
     try {
-      const result = await userService.getDefaultAddress(req.user!.id);
+      const result = await userService.getDefaultAddress(req.user!.userId);
       successResponse(res, '获取默认地址成功', result);
     } catch (error: any) {
-      errorResponse(res, error.message, error.code || 400);
+      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
     }
   }
 
@@ -168,10 +167,10 @@ class UserController {
    */
   async createAddress(req: Request, res: Response): Promise<void> {
     try {
-      const result = await userService.createAddress(req.user!.id, req.body);
+      const result = await userService.createAddress(req.user!.userId, req.body);
       successResponse(res, '创建地址成功', result, 201);
     } catch (error: any) {
-      errorResponse(res, error.message, error.code || 400);
+      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
     }
   }
 
@@ -182,10 +181,14 @@ class UserController {
    */
   async updateAddress(req: Request, res: Response): Promise<void> {
     try {
-      const result = await userService.updateAddress(req.user!.id, parseInt(req.params.id), req.body);
+      const addressId = parseInt(req.params.id || '');
+      if (isNaN(addressId)) {
+        throw new Error('无效的地址ID');
+      }
+      const result = await userService.updateAddress(req.user!.userId, addressId, req.body);
       successResponse(res, '更新地址成功', result);
     } catch (error: any) {
-      errorResponse(res, error.message, error.code || 400);
+      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
     }
   }
 
@@ -196,10 +199,14 @@ class UserController {
    */
   async setDefaultAddress(req: Request, res: Response): Promise<void> {
     try {
-      await userService.setDefaultAddress(req.user!.id, parseInt(req.params.id));
+      const addressId = parseInt(req.params.id || '');
+      if (isNaN(addressId)) {
+        throw new Error('无效的地址ID');
+      }
+      await userService.setDefaultAddress(req.user!.userId, addressId);
       successResponse(res, '设置默认地址成功');
     } catch (error: any) {
-      errorResponse(res, error.message, error.code || 400);
+      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
     }
   }
 
@@ -210,10 +217,14 @@ class UserController {
    */
   async deleteAddress(req: Request, res: Response): Promise<void> {
     try {
-      await userService.deleteAddress(req.user!.id, parseInt(req.params.id));
+      const addressId = parseInt(req.params.id || '');
+      if (isNaN(addressId)) {
+        throw new Error('无效的地址ID');
+      }
+      await userService.deleteAddress(req.user!.userId, addressId);
       successResponse(res, '删除地址成功');
     } catch (error: any) {
-      errorResponse(res, error.message, error.code || 400);
+      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
     }
   }
 
@@ -225,10 +236,10 @@ class UserController {
   async batchDeleteAddresses(req: Request, res: Response): Promise<void> {
     try {
       const { addressIds } = req.body;
-      await userService.batchDeleteAddresses(req.user!.id, addressIds);
+      await userService.batchDeleteAddresses(req.user!.userId, addressIds);
       successResponse(res, '批量删除地址成功');
     } catch (error: any) {
-      errorResponse(res, error.message, error.code || 400);
+      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
     }
   }
 }

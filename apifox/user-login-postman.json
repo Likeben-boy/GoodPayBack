@@ -1,0 +1,413 @@
+{
+  "info": {
+    "name": "用户登录接口测试",
+    "description": "测试用户登录功能",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "user-login-collection",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "item": [
+    {
+      "name": "用户登录 - 用户名登录成功",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"testuser123\",\n  \"password\": \"Test123456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "login"
+          ]
+        },
+        "description": "使用用户名进行登录测试"
+      },
+      "response": []
+    },
+    {
+      "name": "用户登录 - 邮箱登录成功",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"test@example.com\",\n  \"password\": \"Test123456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "login"
+          ]
+        },
+        "description": "使用邮箱进行登录测试"
+      },
+      "response": []
+    },
+    {
+      "name": "用户登录 - 手机号登录成功",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"13812345678\",\n  \"password\": \"Test123456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "login"
+          ]
+        },
+        "description": "使用手机号进行登录测试"
+      },
+      "response": []
+    },
+    {
+      "name": "用户登录 - 用户名不存在",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"nonexistentuser\",\n  \"password\": \"Test123456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "login"
+          ]
+        },
+        "description": "测试不存在的用户名，应该返回登录失败"
+      },
+      "response": []
+    },
+    {
+      "name": "用户登录 - 密码错误",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"testuser123\",\n  \"password\": \"WrongPassword123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "login"
+          ]
+        },
+        "description": "测试错误的密码，应该返回登录失败"
+      },
+      "response": []
+    },
+    {
+      "name": "用户登录 - 缺少用户名",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"password\": \"Test123456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "login"
+          ]
+        },
+        "description": "测试缺少用户名字段，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "用户登录 - 缺少密码",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"testuser123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "login"
+          ]
+        },
+        "description": "测试缺少密码字段，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "用户登录 - 空用户名",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"\",\n  \"password\": \"Test123456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "login"
+          ]
+        },
+        "description": "测试空的用户名，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "用户登录 - 空密码",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"testuser123\",\n  \"password\": \"\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "login"
+          ]
+        },
+        "description": "测试空的密码，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "用户登录 - 用户名前后空格",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"  testuser123  \",\n  \"password\": \"Test123456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "login"
+          ]
+        },
+        "description": "测试用户名包含前后空格，应该被trim处理后正常登录"
+      },
+      "response": []
+    },
+    {
+      "name": "用户登录 - 邮箱格式错误",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"invalid-email-format\",\n  \"password\": \"Test123456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "login"
+          ]
+        },
+        "description": "测试无效的邮箱格式作为用户名，应该返回登录失败"
+      },
+      "response": []
+    },
+    {
+      "name": "用户登录 - 请求体为空",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "login"
+          ]
+        },
+        "description": "测试空的请求体，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "用户登录 - Content-Type错误",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "text/plain"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "username=testuser123&password=Test123456"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "login"
+          ]
+        },
+        "description": "测试错误的Content-Type，应该返回解析错误"
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string",
+      "description": "API基础URL"
+    }
+  ]
+}

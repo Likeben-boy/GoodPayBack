@@ -1,6 +1,6 @@
 import mysql from 'mysql2/promise';
 import config from '../config';
-import logger from '../utils/logger';
+import { logger } from '../utils/logger';
 
 // 数据库连接池配置
 const pool = mysql.createPool({

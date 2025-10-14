@@ -8,26 +8,28 @@ export interface User {
   id: number;
   /** 用户名 */
   username: string;
-  /** 用户邮箱，可选 */
-  email?: string;
+  /** 用户邮箱 */
+  email: string;
   /** 手机号码，可选 */
-  phone?: string;
+  phone?: string | null;
   /** 用户昵称 */
-  nickname: string;
+  nickname: string | null;
   /** 用户头像URL，可选 */
-  avatar?: string;
+  avatar?: string | null;
   /** 用户状态：激活、未激活、被禁用 */
   status: 'active' | 'inactive' | 'banned';
-  /** 用户角色：普通用户、管理员、超级管理员 */
-  role: 'user' | 'admin' | 'superadmin';
+  /** 用户角色 */
+  role?: string;
   /** 最后登录时间，可选 */
-  lastLoginAt?: Date;
+  lastLoginAt?: Date | null;
   /** 最后登录IP地址，可选 */
-  lastLoginIp?: string;
+  lastLoginIp?: string | null;
   /** 创建时间 */
   createdAt: Date;
   /** 更新时间 */
   updatedAt: Date;
+  /** 软删除时间 */
+  deletedAt?: Date | null;
 }
 
 /**
@@ -182,8 +184,8 @@ export interface LoginResult {
   userId: number;
   /** JWT令牌对 */
   tokens: TokenPair;
-  /** 用户信息（不包含密码） */
-  user: Omit<User, 'password'>;
+  /** 用户信息 */
+  user: User;
 }
 
 /**

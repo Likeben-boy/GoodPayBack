@@ -1,11 +1,11 @@
 import nodemailer from 'nodemailer';
 import config from '../config';
-import logger from './logger';
+import {logger} from './logger';
 
 // 邮件传输器
 let emailTransporter: nodemailer.Transporter | undefined;
 if (config.smtpHost && config.smtpUser && config.smtpPass) {
-  emailTransporter = nodemailer.createTransporter({
+  emailTransporter = nodemailer.createTransport({
     host: config.smtpHost,
     port: config.smtpPort,
     secure: config.smtpPort === 465,

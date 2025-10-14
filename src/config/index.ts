@@ -1,4 +1,4 @@
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 
 // 加载环境变量
 dotenv.config();
@@ -8,17 +8,11 @@ interface DatabaseConfig {
   url: string;
 }
 
-// Redis配置接口
-interface RedisConfig {
-  host: string;
-  port: number;
-  password: string;
-  db: number;
-}
 
 // JWT配置接口
 interface JwtConfig {
   secret: string;
+  refreshSecret: string;
   expiresIn: string | number;
   refreshExpiresIn: string | number;
 }
@@ -29,7 +23,6 @@ interface AppConfig {
   nodeEnv: string;
   frontendUrl: string;
   db: DatabaseConfig;
-  redis: RedisConfig;
   jwt: JwtConfig;
   uploadPath: string;
   maxFileSize: number;
@@ -66,19 +59,13 @@ const config: AppConfig = {
     url: process.env.DATABASE_URL || 'mysql://root:@localhost:3306/goodpayback'
   } as DatabaseConfig,
 
-  // Redis配置
-  redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379', 10),
-    password: process.env.REDIS_PASSWORD || '',
-    db: parseInt(process.env.REDIS_DB || '0', 10)
-  } as RedisConfig,
-
+  
   // JWT配置
   jwt: {
     secret: process.env.JWT_SECRET || 'your-secret-key',
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d'
+    refreshSecret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key',
+    expiresIn: process.env.JWT_EXPIRES_IN || '15m',
+    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d'
   } as JwtConfig,
 
   // 文件上传配置

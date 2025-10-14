@@ -3,9 +3,16 @@ import userController from '../controllers/user.controller';
 import { authMiddleware } from '../../../middleware/auth';
 import { uploadSingle, imageOnly } from '../../../middleware/upload';
 import { validate } from '../../../middleware/validation';
+import { userValidation } from '../../../middleware/validation/schemas';
+import {
+  loginLimiter,
+  registerLimiter,
+  passwordResetLimiter,
+  uploadLimiter
+} from '../../../middleware/rateLimiter';
 
 // 创建路由器
-const router = Router();
+const router: Router = Router();
 
 /**
  * 用户路由模块
@@ -13,10 +20,10 @@ const router = Router();
  */
 
 // 用户注册
-router.post('/register', userController.register);
+router.post('/register', registerLimiter, validate(userValidation.register), userController.register);
 
 // 用户登录
-router.post('/login', userController.login);
+router.post('/login', loginLimiter, validate(userValidation.login), userController.login);
 
 // 用户登出
 router.post('/logout', authMiddleware, userController.logout);
@@ -28,17 +35,18 @@ router.post('/refresh-token', userController.refreshToken);
 router.get('/profile', authMiddleware, userController.getProfile);
 
 // 更新用户信息
-router.put('/profile', authMiddleware, userController.updateProfile);
+router.put('/profile', authMiddleware, validate(userValidation.updateProfile), userController.updateProfile);
 
 // 修改密码
-router.put('/password', authMiddleware, userController.changePassword);
+router.put('/password', authMiddleware, validate(userValidation.changePassword), userController.changePassword);
 
 // 重置密码
-router.post('/reset-password', userController.resetPassword);
+router.post('/reset-password', passwordResetLimiter, userController.resetPassword);
 
 // 上传头像
 router.post('/avatar',
   authMiddleware,
+  uploadLimiter,
   uploadSingle('avatar'),
   imageOnly,
   userController.uploadAvatar
@@ -51,10 +59,10 @@ router.get('/addresses', authMiddleware, userController.getAddresses);
 router.get('/addresses/default', authMiddleware, userController.getDefaultAddress);
 
 // 添加用户地址
-router.post('/addresses', authMiddleware, userController.createAddress);
+router.post('/addresses', authMiddleware, validate(userValidation.createAddress), userController.createAddress);
 
 // 更新用户地址
-router.put('/addresses/:id', authMiddleware, userController.updateAddress);
+router.put('/addresses/:id', authMiddleware, validate(userValidation.updateAddress), userController.updateAddress);
 
 // 设置默认地址
 router.put('/addresses/:id/default', authMiddleware, userController.setDefaultAddress);
