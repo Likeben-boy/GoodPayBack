@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import config from '../config';
-import {logger} from './logger';
+import logger from './logger';
 import { JwtPayload } from '../types';
 import { TokenPair } from '../types/user';
 

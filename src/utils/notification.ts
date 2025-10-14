@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 import config from '../config';
-import {logger} from './logger';
+import logger from './logger';
 
 // 邮件传输器
 let emailTransporter: nodemailer.Transporter | undefined;

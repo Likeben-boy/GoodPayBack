@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger, businessLogger, securityLogger } from '../utils/logger';
+import logger, { businessLogger, securityLogger } from '../utils/logger';
 import { ApiResponse, ValidationError } from '../types';
 
 // 自定义错误类

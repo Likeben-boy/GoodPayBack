@@ -21,7 +21,7 @@ import { testConnection } from './database/prisma';
 
 // 导入工具
 import { ApiResponse } from './types';
-import { logger, businessLogger } from './utils/logger';
+import logger, { businessLogger } from './utils/logger';
 
 // 加载环境变量
 dotenv.config();

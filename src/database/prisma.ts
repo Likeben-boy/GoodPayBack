@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { dbLogger, logger } from '../utils/logger';
+import logger, { dbLogger } from '../utils/logger';
 
 // 扩展全局类型以包含Prisma客户端
 declare global {

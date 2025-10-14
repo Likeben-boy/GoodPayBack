@@ -1,6 +1,6 @@
 import { prisma } from '../../../database/prisma';
 import bcrypt from 'bcryptjs';
-import { logger, dbLogger, businessLogger } from '../../../utils/logger';
+import logger, { dbLogger, businessLogger } from '../../../utils/logger';
 import {
   User,
   CreateUserInput,

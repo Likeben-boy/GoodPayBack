@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import config from '../config';
 import { ApiResponse } from '../types';
 import { JwtPayload } from '../types';
-import { securityLogger, logger } from '../utils/logger';
+import logger, { securityLogger } from '../utils/logger';
 
 // 扩展Request接口以包含用户信息
 declare global {

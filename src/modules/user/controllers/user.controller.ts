@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import userService from '../services/user.service';
 import { successResponse, errorResponse } from '../../../utils/response';
-import { businessLogger, logger } from '../../../utils/logger';
+import logger, { businessLogger } from '../../../utils/logger';
 
 class UserController {
   /**
