@@ -22,6 +22,10 @@ async function main() {
     })
 
     console.log('更新的用户',user);
+    console.log('类型:', typeof user);
+console.log('构造函数:', user.constructor.name);
+console.log('是 Promise 吗:', user instanceof Promise);
+console.log('实际数据:', user);
     
 
     const allUsers = await prisma.users.findMany();

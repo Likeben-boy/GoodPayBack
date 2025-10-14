@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { dbLogger, logger } from '../utils/logger';
 
 // 扩展全局类型以包含Prisma客户端
 declare global {
@@ -7,13 +8,50 @@ declare global {
 
 // 创建Prisma客户端实例
 const createPrismaClient = (): PrismaClient => {
-  return new PrismaClient({
+  const client = new PrismaClient({
     log: [
       { level: 'query', emit: 'event' },
       { level: 'error', emit: 'event' },
-      { level: 'warn', emit: 'event' }
+      { level: 'warn', emit: 'event' },
+      { level: 'info', emit: 'event' }
     ]
   });
+
+  // 设置 Prisma 事件监听器来集成 Winston 日志
+  client.$on('query', (e) => {
+    dbLogger.debug('Database Query', {
+      query: e.query,
+      params: e.params,
+      duration: `${e.duration}ms`,
+      timestamp: e.timestamp
+    });
+  });
+
+  client.$on('error', (e) => {
+    logger.error('Database Error', {
+      message: e.message,
+      target: e.target,
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  client.$on('warn', (e) => {
+    logger.warn('Database Warning', {
+      message: e.message,
+      target: e.target,
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  client.$on('info', (e) => {
+    dbLogger.info('Database Info', {
+      message: e.message,
+      target: e.target,
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  return client;
 };
 
 // 单例模式确保只有一个Prisma客户端实例
@@ -28,9 +66,16 @@ if (process.env.NODE_ENV === 'development') {
 const testConnection = async (): Promise<void> => {
   try {
     await prisma.$connect();
-    console.log('✅ Prisma database connected successfully');
+    logger.info('Prisma database connected successfully', {
+      service: 'prisma',
+      timestamp: new Date().toISOString()
+    });
   } catch (error) {
-    console.error('❌ Prisma database connection failed:', error);
+    logger.error('Prisma database connection failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      service: 'prisma',
+      timestamp: new Date().toISOString()
+    });
     throw error;
   }
 };
@@ -41,21 +86,46 @@ const executeRaw = async <T = any>(
   ...params: any[]
 ): Promise<T[]> => {
   try {
+    dbLogger.debug('Executing raw query', {
+      query: query.trim(),
+      params: params.length > 0 ? params : undefined,
+      timestamp: new Date().toISOString()
+    });
+
     return await prisma.$queryRawUnsafe<T[]>(query, ...params);
   } catch (error) {
-    console.error('Execute raw query error:', error);
+    logger.error('Execute raw query error', {
+      query: query.trim(),
+      params: params.length > 0 ? params : undefined,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    });
     throw error;
   }
 };
 
 // 执行事务
 const executeTransaction = async <T>(
-  callback: (tx: PrismaClient) => Promise<T>
+  callback: (tx: Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$extends">) => Promise<T>
 ): Promise<T> => {
   try {
-    return await prisma.$transaction(callback);
+    dbLogger.debug('Starting database transaction', {
+      timestamp: new Date().toISOString()
+    });
+
+    const result = await prisma.$transaction(callback);
+
+    dbLogger.debug('Database transaction completed successfully', {
+      timestamp: new Date().toISOString()
+    });
+
+    return result;
   } catch (error) {
-    console.error('Transaction error:', error);
+    logger.error('Transaction error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    });
     throw error;
   }
 };
@@ -65,9 +135,25 @@ const batchOperations = async <T>(
   operations: ((tx: PrismaClient) => Promise<T>)[]
 ): Promise<T[]> => {
   try {
-    return await prisma.$transaction(operations);
+    dbLogger.debug('Starting batch operations', {
+      operationCount: operations.length,
+      timestamp: new Date().toISOString()
+    });
+
+    const result = await prisma.$transaction(operations as any);
+
+    dbLogger.debug('Batch operations completed successfully', {
+      operationCount: operations.length,
+      timestamp: new Date().toISOString()
+    });
+
+    return result;
   } catch (error) {
-    console.error('Batch operations error:', error);
+    logger.error('Batch operations error', {
+      operationCount: operations.length,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    });
     throw error;
   }
 };
@@ -75,27 +161,38 @@ const batchOperations = async <T>(
 // 获取数据库统计信息
 const getDatabaseStats = async () => {
   try {
+    dbLogger.debug('Fetching database statistics', {
+      timestamp: new Date().toISOString()
+    });
+
     const [
       userCount,
-      restaurantCount,
-      productCount,
-      orderCount
+      // restaurantCount,
+      // productCount,
+      // orderCount
     ] = await Promise.all([
-      prisma.user.count(),
-      prisma.restaurant.count(),
-      prisma.product.count(),
-      prisma.order.count()
+      prisma.users.count(),
+      // prisma.restaurant.count(),
+      // prisma.product.count(),
+      // prisma.order.count()
     ]);
 
-    return {
+    const stats = {
       users: userCount,
-      restaurants: restaurantCount,
-      products: productCount,
-      orders: orderCount,
+      // restaurants: restaurantCount,
+      // products: productCount,
+      // orders: orderCount,
       timestamp: new Date().toISOString()
     };
+
+    dbLogger.info('Database statistics retrieved', stats);
+
+    return stats;
   } catch (error) {
-    console.error('Get database stats error:', error);
+    logger.error('Get database stats error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    });
     throw error;
   }
 };
@@ -125,9 +222,16 @@ const healthCheck = async (): Promise<{
 const disconnect = async (): Promise<void> => {
   try {
     await prisma.$disconnect();
-    console.log('Prisma database disconnected successfully');
+    logger.info('Prisma database disconnected successfully', {
+      service: 'prisma',
+      timestamp: new Date().toISOString()
+    });
   } catch (error) {
-    console.error('Prisma database disconnect error:', error);
+    logger.error('Prisma database disconnect error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      service: 'prisma',
+      timestamp: new Date().toISOString()
+    });
     throw error;
   }
 };

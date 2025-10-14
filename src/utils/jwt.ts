@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken';
 import config from '../config';
-import logger from './logger';
-import { JwtPayload, TokenPair } from '../types';
+import {logger} from './logger';
+import { JwtPayload } from '../types';
+import { TokenPair } from '../types/user';
 
 /**
  * 生成JWT令牌
@@ -13,7 +14,6 @@ const generateToken = (userId: number, payload: Partial<JwtPayload> = {}): Token
   const tokenPayload: JwtPayload = {
     userId,
     username: payload.username || '',
-    role: payload.role || 'user',
     ...payload,
     iat: Math.floor(Date.now() / 1000)
   };
@@ -22,14 +22,14 @@ const generateToken = (userId: number, payload: Partial<JwtPayload> = {}): Token
   const accessToken = jwt.sign(
     tokenPayload,
     config.jwt.secret,
-    { expiresIn: config.jwt.expiresIn }
+    { expiresIn: config.jwt.expiresIn } as any
   );
 
   // 生成刷新令牌
   const refreshToken = jwt.sign(
     { userId, type: 'refresh' },
     config.jwt.secret,
-    { expiresIn: config.jwt.refreshExpiresIn }
+    { expiresIn: config.jwt.refreshExpiresIn } as any
   );
 
   logger.info(`Token generated for user: ${userId}`);

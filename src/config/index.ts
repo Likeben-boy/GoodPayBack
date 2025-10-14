@@ -19,8 +19,8 @@ interface RedisConfig {
 // JWT配置接口
 interface JwtConfig {
   secret: string;
-  expiresIn: string;
-  refreshExpiresIn: string;
+  expiresIn: string | number;
+  refreshExpiresIn: string | number;
 }
 
 // 应用配置接口
