@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import userService from '../services/user.service';
 import { successResponse, errorResponse } from '../../../utils/response';
+import { businessLogger, logger } from '../../../utils/logger';
 
 class UserController {
   /**
@@ -10,9 +11,29 @@ class UserController {
    */
   async register(req: Request, res: Response): Promise<void> {
     try {
+      businessLogger.info('用户开始注册', {
+        email: req.body.email,
+        ip: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+
       const result = await userService.register(req.body);
+
+      businessLogger.info('User registration successful', {
+        userId: result.user?.id,
+        email: req.body.email,
+        ip: req.ip
+      });
+
       successResponse(res, '注册成功', result, 201);
     } catch (error: any) {
+      logger.error('User registration failed', {
+        error: error.message,
+        stack: error.stack,
+        email: req.body.email,
+        ip: req.ip,
+        code: error.code || 'VALIDATION_ERROR'
+      });
       errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
     }
   }
@@ -24,9 +45,29 @@ class UserController {
    */
   async login(req: Request, res: Response): Promise<void> {
     try {
+      businessLogger.info('User login processing', {
+        email: req.body.email,
+        ip: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+
       const result = await userService.login(req.body);
+
+      businessLogger.info('User login successful', {
+        userId: result.user?.id,
+        email: req.body.email,
+        ip: req.ip
+      });
+
       successResponse(res, '登录成功', result);
     } catch (error: any) {
+      logger.error('User login failed', {
+        error: error.message,
+        stack: error.stack,
+        email: req.body.email,
+        ip: req.ip,
+        code: error.code || 'VALIDATION_ERROR'
+      });
       errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
     }
   }
@@ -38,9 +79,26 @@ class UserController {
    */
   async logout(req: Request, res: Response): Promise<void> {
     try {
+      businessLogger.info('User logout processing', {
+        userId: req.user!.userId,
+        ip: req.ip
+      });
+
       await userService.logout(req.user!.userId);
+
+      businessLogger.info('User logout successful', {
+        userId: req.user!.userId,
+        ip: req.ip
+      });
+
       successResponse(res, '登出成功');
     } catch (error: any) {
+      logger.error('User logout failed', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.user?.userId,
+        ip: req.ip
+      });
       errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
     }
   }

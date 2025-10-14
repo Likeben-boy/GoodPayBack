@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import config from '../config';
 import { ApiResponse } from '../types';
 import { JwtPayload } from '../types';
+import { securityLogger, logger } from '../utils/logger';
 
 // 扩展Request接口以包含用户信息
 declare global {
@@ -21,7 +22,21 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction): void =
   try {
     const authHeader = req.headers.authorization;
 
+    securityLogger.info('JWT authentication attempt', {
+      url: req.url,
+      method: req.method,
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      securityLogger.warn('Missing or invalid authorization header', {
+        url: req.url,
+        method: req.method,
+        ip: req.ip,
+        authHeader: authHeader ? 'exists' : 'missing'
+      });
+
       const response: ApiResponse = {
         status: 'error',
         message: '缺少访问令牌',
@@ -37,6 +52,15 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction): void =
     try {
       const decoded = jwt.verify(token, config.jwt.secret) as JwtPayload;
       req.user = decoded;
+
+      securityLogger.info('JWT authentication successful', {
+        userId: decoded.userId,
+        username: decoded.username,
+        role: decoded.role,
+        url: req.url,
+        ip: req.ip
+      });
+
       next();
     } catch (jwtError) {
       let code = 'INVALID_TOKEN';
@@ -45,9 +69,21 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction): void =
       if (jwtError instanceof jwt.TokenExpiredError) {
         code = 'TOKEN_EXPIRED';
         message = '访问令牌已过期';
+        securityLogger.warn('JWT token expired', {
+          url: req.url,
+          method: req.method,
+          ip: req.ip,
+          error: jwtError.message
+        });
       } else if (jwtError instanceof jwt.JsonWebTokenError) {
         code = 'INVALID_TOKEN';
         message = '访问令牌无效';
+        securityLogger.warn('Invalid JWT token', {
+          url: req.url,
+          method: req.method,
+          ip: req.ip,
+          error: jwtError.message
+        });
       }
 
       const response: ApiResponse = {
@@ -59,6 +95,14 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction): void =
       res.status(401).json(response);
     }
   } catch (error) {
+    logger.error('Authentication middleware error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      url: req.url,
+      method: req.method,
+      ip: req.ip
+    });
+
     const response: ApiResponse = {
       status: 'error',
       message: '认证失败',

@@ -66,12 +66,12 @@ if (process.env.NODE_ENV === 'development') {
 const testConnection = async (): Promise<void> => {
   try {
     await prisma.$connect();
-    logger.info('Prisma database connected successfully', {
+    logger.info('Prisma 数据库启动成功', {
       service: 'prisma',
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Prisma database connection failed', {
+    logger.error('Prisma 数据库启动失败', {
       error: error instanceof Error ? error.message : 'Unknown error',
       service: 'prisma',
       timestamp: new Date().toISOString()

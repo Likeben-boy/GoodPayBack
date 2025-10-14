@@ -1,6 +1,6 @@
 import { prisma } from '../../../database/prisma';
 import bcrypt from 'bcryptjs';
-import { logger } from '../../../utils/logger';
+import { logger, dbLogger, businessLogger } from '../../../utils/logger';
 import {
   User,
   CreateUserInput,
@@ -21,11 +21,22 @@ class UserService {
    * @returns 注册结果
    */
   async register(userData: CreateUserInput): Promise<LoginResult> {
+    dbLogger.debug('Database operation: user existence check', {
+      operation: 'user.checkExists',
+      username: userData.username,
+      email: userData.email,
+      phone: userData.phone
+    });
+
     // 检查用户名是否已存在
     const existingUser = await prisma.users.findUnique({
       where: { username: userData.username }
     });
     if (existingUser) {
+      dbLogger.warn('Username already exists', {
+        username: userData.username,
+        existingUserId: existingUser.id
+      });
       throw { message: '用户名已存在', code: 'USERNAME_EXISTS' };
     }
 
@@ -52,6 +63,13 @@ class UserService {
     // 加密密码
     const hashedPassword = await bcrypt.hash(userData.password, 10);
 
+    dbLogger.info('Database operation: creating user', {
+      operation: 'user.create',
+      username: userData.username,
+      email: userData.email,
+      phone: userData.phone
+    });
+
     // 创建用户
     const user = await prisma.users.create({
       data: {
@@ -63,6 +81,13 @@ class UserService {
         avatar: userData.avatar || null,
         status: 'active'
       }
+    });
+
+    dbLogger.info('Database operation: user created successfully', {
+      operation: 'user.created',
+      userId: user.id,
+      username: user.username,
+      email: user.email
     });
 
     // 生成JWT令牌
@@ -94,6 +119,13 @@ class UserService {
   async login(loginData: UserLoginInput): Promise<LoginResult> {
     const { username, password, email, phone } = loginData;
 
+    dbLogger.debug('Database operation: user lookup for login', {
+      operation: 'user.lookup',
+      username,
+      email,
+      phone
+    });
+
     let user: any = null;
 
     // 根据不同的登录方式查找用户
@@ -114,16 +146,35 @@ class UserService {
     }
 
     if (!user) {
+      dbLogger.warn('User lookup failed during login', {
+        operation: 'user.login.failed',
+        username,
+        email,
+        phone,
+        reason: 'user_not_found'
+      });
       throw { message: '用户不存在', code: 'USER_NOT_FOUND' };
     }
 
     if (user.status !== 'active') {
+      dbLogger.warn('User login attempt for disabled account', {
+        operation: 'user.login.disabled',
+        userId: user.id,
+        username: user.username,
+        status: user.status
+      });
       throw { message: '用户已被禁用', code: 'USER_DISABLED' };
     }
 
     // 验证密码
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+      dbLogger.warn('Password validation failed during login', {
+        operation: 'user.login.invalid_password',
+        userId: user.id,
+        username: user.username,
+        reason: 'invalid_password'
+      });
       throw { message: '密码错误', code: 'INVALID_PASSWORD' };
     }
 

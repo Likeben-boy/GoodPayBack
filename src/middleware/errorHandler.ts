@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger } from '../utils/logger';
+import { logger, businessLogger, securityLogger } from '../utils/logger';
 import { ApiResponse, ValidationError } from '../types';
 
 // 自定义错误类
@@ -22,16 +22,29 @@ export class AppError extends Error {
  * 统一处理所有错误并返回标准化响应
  */
 const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction): void => {
-  // 记录错误日志
-  logger.error('Error occurred:', {
+  // 增强的错误日志记录
+  const errorContext = {
     error: err.message,
     stack: err.stack,
     url: req.url,
     method: req.method,
     ip: req.ip,
     userAgent: req.get('User-Agent'),
-    timestamp: new Date().toISOString()
-  });
+    userId: (req as any).user?.userId,
+    username: (req as any).user?.username,
+    timestamp: new Date().toISOString(),
+    errorCode: (err as any).code || 'UNKNOWN_ERROR',
+    statusCode: (err as any).statusCode || 500
+  };
+
+  // 根据错误类型使用不同的日志记录器
+  if (errorContext.statusCode === 401 || errorContext.statusCode === 403) {
+    securityLogger.error('Security related error', errorContext);
+  } else if (errorContext.statusCode >= 500) {
+    logger.error('Server error', errorContext);
+  } else {
+    businessLogger.warn('Business logic error', errorContext);
+  }
 
   // 数据库错误处理
   if ((err as any).code === 'ER_DUP_ENTRY') {
@@ -175,6 +188,16 @@ const errorHandler = (err: Error, req: Request, res: Response, next: NextFunctio
  * 404错误处理中间件
  */
 const notFoundHandler = (req: Request, res: Response): void => {
+  // 记录404错误日志
+  businessLogger.warn('Route not found', {
+    url: req.url,
+    method: req.method,
+    ip: req.ip,
+    userAgent: req.get('User-Agent'),
+    userId: (req as any).user?.userId,
+    timestamp: new Date().toISOString()
+  });
+
   const response: ApiResponse = {
     status: 'error',
     message: '路由不存在',

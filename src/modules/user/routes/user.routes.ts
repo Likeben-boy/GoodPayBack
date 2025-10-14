@@ -10,6 +10,7 @@ import {
   passwordResetLimiter,
   uploadLimiter
 } from '../../../middleware/rateLimiter';
+import { businessLogger, securityLogger } from '../../../utils/logger';
 
 // 创建路由器
 const router: Router = Router();
@@ -20,10 +21,34 @@ const router: Router = Router();
  */
 
 // 用户注册
-router.post('/register', registerLimiter, validate(userValidation.register), userController.register);
+router.post('/register',
+  (req, res, next) => {
+    businessLogger.info('User registration attempt', {
+      email: req.body.email,
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+    next();
+  },
+  registerLimiter,
+  validate(userValidation.register),
+  userController.register
+);
 
 // 用户登录
-router.post('/login', loginLimiter, validate(userValidation.login), userController.login);
+router.post('/login',
+  (req, res, next) => {
+    securityLogger.info('User login attempt', {
+      email: req.body.email,
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+    next();
+  },
+  loginLimiter,
+  validate(userValidation.login),
+  userController.login
+);
 
 // 用户登出
 router.post('/logout', authMiddleware, userController.logout);

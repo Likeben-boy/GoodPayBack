@@ -21,6 +21,7 @@ import { testConnection } from './database/prisma';
 
 // 导入工具
 import { ApiResponse } from './types';
+import { logger, businessLogger } from './utils/logger';
 
 // 加载环境变量
 dotenv.config();
@@ -31,6 +32,28 @@ const PORT: number = parseInt(process.env.PORT || '3000', 10);
 
 // 数据库连接
 testConnection();
+
+// 请求入口日志中间件
+app.use((req: Request, res: Response, next: NextFunction) => {
+  
+  logger.info('Request received', {
+    method: req.method,
+    url: req.url,
+    ip: req.ip,
+    userAgent: req.get('User-Agent'),
+    timestamp: new Date().toISOString()
+  });
+
+  businessLogger.info('API Request started', {
+    method: req.method,
+    url: req.url,
+    ip: req.ip,
+    userAgent: req.get('User-Agent'),
+    requestId: Math.random().toString(36).substring(7)
+  });
+
+  next();
+});
 
 // 安全中间件
 app.use(helmet());
