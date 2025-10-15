@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import logger, { businessLogger, securityLogger } from '../utils/logger';
 import { ApiResponse, ValidationError } from '../types';
+import config from '../config';
 
 // 自定义错误类
 export class AppError extends Error {
@@ -177,7 +178,7 @@ const errorHandler = (err: Error, req: Request, res: Response, next: NextFunctio
   };
 
   // 开发环境下添加错误堆栈
-  if (process.env.NODE_ENV === 'development') {
+  if (config.nodeEnv === 'development') {
     (response as any).stack = err.stack;
   }
 

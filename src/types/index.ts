@@ -74,8 +74,18 @@ export interface RequestUser {
   username: string;
   /** 用户邮箱，可选 */
   email?: string;
-  /** 用户角色 */
-  role: string;
+}
+
+enum JwtType {
+
+  //访问令牌
+  normal,
+
+  //刷新令牌
+  refresh,
+
+  //临时临牌
+  temp
 }
 
 /**
@@ -84,14 +94,28 @@ export interface RequestUser {
 export interface JwtPayload {
   /** 用户ID */
   userId: number;
-  /** 用户名 */
-  username: string;
-  /** 用户角色 */
-  role?: string;
   /** JWT签发时间戳（Unix时间戳） */
   iat: number;
   /** JWT过期时间戳（Unix时间戳），可选 */
   exp?: number;
+  //令牌类型
+  type: JwtType;
+}
+
+/**
+ * JWT令牌载荷接口校验
+ */
+export interface JwtPayloadOut {
+
+  //JWT令牌载荷接口
+  jwtPayload?: JwtPayload;
+
+  //是否过期
+  isExpired: boolean;
+  //是否是无效令牌
+   isValid: boolean;
+   //令牌类型验证错误
+
 }
 
 /**

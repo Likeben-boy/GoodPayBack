@@ -30,10 +30,10 @@ export const userValidation = {
   ],
 
   login: [
-    body('username')
-      .trim()
-      .notEmpty()
-      .withMessage('请输入用户名、邮箱或手机号'),
+    // body('username')
+    //   .trim()
+    //   .notEmpty()
+    //   .withMessage('请输入用户名、邮箱或手机号'),
     body('password')
       .notEmpty()
       .withMessage('请输入密码')

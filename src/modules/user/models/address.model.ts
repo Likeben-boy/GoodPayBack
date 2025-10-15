@@ -8,7 +8,7 @@ class AddressModel {
    * @returns 地址ID
    */
   async create(addressData: CreateAddressInput): Promise<number> {
-    const address = await prisma.address.create({
+    const address = await prisma.addresses.create({
       data: {
         userId: addressData.userId,
         recipient: addressData.recipient,
@@ -17,7 +17,7 @@ class AddressModel {
         city: addressData.city,
         district: addressData.district,
         detailedAddress: addressData.detailedAddress,
-        postalCode: addressData.postalCode,
+        postalCode: addressData.postalCode || null,
         isDefault: addressData.isDefault || false
       }
     });
@@ -30,7 +30,7 @@ class AddressModel {
    * @returns 地址信息
    */
   async findById(id: number): Promise<Address | null> {
-    const address = await prisma.address.findFirst({
+    const address = await prisma.addresses.findFirst({
       where: {
         id,
         deletedAt: null
@@ -41,7 +41,7 @@ class AddressModel {
 
     return {
       ...address,
-      isDefault: address.isDefault,
+      isDefault: address.isDefault || false,
       createdAt: address.createdAt,
       updatedAt: address.updatedAt
     };
@@ -53,7 +53,7 @@ class AddressModel {
    * @returns 地址列表
    */
   async findByUserId(userId: number): Promise<Address[]> {
-    const addresses = await prisma.address.findMany({
+    const addresses = await prisma.addresses.findMany({
       where: {
         userId,
         deletedAt: null
@@ -66,9 +66,11 @@ class AddressModel {
 
     return addresses.map(address => ({
       ...address,
-      isDefault: address.isDefault,
+      isDefault: address.isDefault || false,
+      postalCode: address.postalCode || undefined,
       createdAt: address.createdAt,
-      updatedAt: address.updatedAt
+      updatedAt: address.updatedAt,
+      deletedAt: address.deletedAt
     }));
   }
 
@@ -78,7 +80,7 @@ class AddressModel {
    * @returns 默认地址
    */
   async findDefaultByUserId(userId: number): Promise<Address | null> {
-    const address = await prisma.address.findFirst({
+    const address = await prisma.addresses.findFirst({
       where: {
         userId,
         isDefault: true,
@@ -90,7 +92,7 @@ class AddressModel {
 
     return {
       ...address,
-      isDefault: address.isDefault,
+      isDefault: address.isDefault || false,
       createdAt: address.createdAt,
       updatedAt: address.updatedAt
     };
@@ -103,7 +105,7 @@ class AddressModel {
    * @returns 影响行数
    */
   async update(id: number, addressData: UpdateAddressInput): Promise<number> {
-    const result = await prisma.address.updateMany({
+    const result = await prisma.addresses.updateMany({
       where: {
         id,
         deletedAt: null
@@ -122,7 +124,7 @@ class AddressModel {
   async setDefault(userId: number, addressId: number): Promise<number> {
     const result = await executeTransaction(async (tx) => {
       // 取消所有默认地址
-      await tx.address.updateMany({
+      await tx.addresses.updateMany({
         where: {
           userId,
           deletedAt: null
@@ -133,7 +135,7 @@ class AddressModel {
       });
 
       // 设置新的默认地址
-      const updateResult = await tx.address.updateMany({
+      const updateResult = await tx.addresses.updateMany({
         where: {
           id: addressId,
           userId,
@@ -156,7 +158,7 @@ class AddressModel {
    * @returns 影响行数
    */
   async delete(id: number): Promise<number> {
-    const result = await prisma.address.updateMany({
+    const result = await prisma.addresses.updateMany({
       where: {
         id,
         deletedAt: null
@@ -175,7 +177,7 @@ class AddressModel {
    * @returns 影响行数
    */
   async batchDelete(userId: number, addressIds: number[]): Promise<number> {
-    const result = await prisma.address.updateMany({
+    const result = await prisma.addresses.updateMany({
       where: {
         userId,
         id: {
@@ -197,7 +199,7 @@ class AddressModel {
    * @returns 是否属于用户
    */
   async belongsToUser(addressId: number, userId: number): Promise<boolean> {
-    const address = await prisma.address.findFirst({
+    const address = await prisma.addresses.findFirst({
       where: {
         id: addressId,
         userId,
@@ -215,7 +217,7 @@ class AddressModel {
    * @returns 地址数量
    */
   async countByUserId(userId: number): Promise<number> {
-    return await prisma.address.count({
+    return await prisma.addresses.count({
       where: {
         userId,
         deletedAt: null
@@ -229,7 +231,7 @@ class AddressModel {
    * @returns 默认地址数量
    */
   async countDefaultByUserId(userId: number): Promise<number> {
-    return await prisma.address.count({
+    return await prisma.addresses.count({
       where: {
         userId,
         isDefault: true,
@@ -257,7 +259,7 @@ class AddressModel {
     };
 
     const [addresses, total] = await Promise.all([
-      prisma.address.findMany({
+      prisma.addresses.findMany({
         where,
         orderBy: [
           { isDefault: 'desc' },
@@ -266,7 +268,7 @@ class AddressModel {
         skip,
         take: limit
       }),
-      prisma.address.count({ where })
+      prisma.addresses.count({ where })
     ]);
 
     const totalPages = Math.ceil(total / limit);
@@ -274,7 +276,7 @@ class AddressModel {
     return {
       items: addresses.map(address => ({
         ...address,
-        isDefault: address.isDefault,
+        isDefault: address.isDefault || false,
         createdAt: address.createdAt,
         updatedAt: address.updatedAt
       })),

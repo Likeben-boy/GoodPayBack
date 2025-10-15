@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { validationResult, ValidationChain } from 'express-validator';
 import { ApiResponse, ValidationError } from '../../types';
+import logger, {  businessLogger } from '@/utils/logger';
 
 /**
  * 验证中间件
@@ -20,6 +21,7 @@ const validate = (validations: ValidationChain[]) => {
 
     // 格式化错误信息
     const formattedErrors: ValidationError[] = errors.array().map(error => {
+      businessLogger.error(`校验字段${error.type}错误:${error.msg}`);
       // 处理字段验证错误
       if (error.type === 'field') {
         return {

@@ -1,6 +1,6 @@
 import { prisma, softDelete, paginate } from '../../../database/prisma';
 import { User, CreateUserInput, UpdateUserInput } from '../../../types/user';
-import { UserStatus, UserRole } from '@prisma/client';
+import { users_status } from '@prisma/client';
 
 class UserModel {
   /**
@@ -9,15 +9,15 @@ class UserModel {
    * @returns 用户ID
    */
   async create(userData: CreateUserInput): Promise<number> {
-    const user = await prisma.user.create({
+    const user = await prisma.users.create({
       data: {
         username: userData.username,
-        email: userData.email,
-        phone: userData.phone,
+        email: userData.email || '',
+        phone: userData.phone || null,
         password: userData.password,
         nickname: userData.nickname || userData.username,
-        avatar: userData.avatar,
-        status: (userData.status as UserStatus) || UserStatus.ACTIVE
+        avatar: userData.avatar || null,
+        status: userData.status || users_status.active
       }
     });
     return user.id;
@@ -29,7 +29,7 @@ class UserModel {
    * @returns 用户信息
    */
   async findById(id: number): Promise<User | null> {
-    const user = await prisma.user.findFirst({
+    const user = await prisma.users.findFirst({
       where: {
         id,
         deletedAt: null
@@ -42,7 +42,6 @@ class UserModel {
         nickname: true,
         avatar: true,
         status: true,
-        role: true,
         lastLoginAt: true,
         lastLoginIp: true,
         createdAt: true,
@@ -54,8 +53,7 @@ class UserModel {
 
     return {
       ...user,
-      status: user.status.toLowerCase() as User['status'],
-      role: user.role.toLowerCase() as User['role']
+      status: user.status
     };
   }
 
@@ -65,7 +63,7 @@ class UserModel {
    * @returns 用户信息
    */
   async findByUsername(username: string): Promise<User | null> {
-    const user = await prisma.user.findFirst({
+    const user = await prisma.users.findFirst({
       where: {
         username,
         deletedAt: null
@@ -77,8 +75,7 @@ class UserModel {
     return {
       ...user,
       status: user.status.toLowerCase() as User['status'],
-      role: user.role.toLowerCase() as User['role']
-    };
+          };
   }
 
   /**
@@ -87,7 +84,7 @@ class UserModel {
    * @returns 用户信息
    */
   async findByEmail(email: string): Promise<User | null> {
-    const user = await prisma.user.findFirst({
+    const user = await prisma.users.findFirst({
       where: {
         email,
         deletedAt: null
@@ -99,8 +96,7 @@ class UserModel {
     return {
       ...user,
       status: user.status.toLowerCase() as User['status'],
-      role: user.role.toLowerCase() as User['role']
-    };
+          };
   }
 
   /**
@@ -109,7 +105,7 @@ class UserModel {
    * @returns 用户信息
    */
   async findByPhone(phone: string): Promise<User | null> {
-    const user = await prisma.user.findFirst({
+    const user = await prisma.users.findFirst({
       where: {
         phone,
         deletedAt: null
@@ -121,8 +117,7 @@ class UserModel {
     return {
       ...user,
       status: user.status.toLowerCase() as User['status'],
-      role: user.role.toLowerCase() as User['role']
-    };
+          };
   }
 
   /**
@@ -132,7 +127,7 @@ class UserModel {
    * @returns 影响行数
    */
   async update(id: number, userData: UpdateUserInput): Promise<number> {
-    const result = await prisma.user.updateMany({
+    const result = await prisma.users.updateMany({
       where: {
         id,
         deletedAt: null
@@ -148,7 +143,7 @@ class UserModel {
    * @returns 影响行数
    */
   async delete(id: number): Promise<number> {
-    const result = await prisma.user.updateMany({
+    const result = await prisma.users.updateMany({
       where: {
         id,
         deletedAt: null
@@ -189,7 +184,7 @@ class UserModel {
       ];
     }
 
-    const users = await prisma.user.findMany({
+    const users = await prisma.users.findMany({
       where,
       select: {
         id: true,
@@ -199,7 +194,6 @@ class UserModel {
         nickname: true,
         avatar: true,
         status: true,
-        role: true,
         lastLoginAt: true,
         lastLoginIp: true,
         createdAt: true,
@@ -213,8 +207,7 @@ class UserModel {
     return users.map(user => ({
       ...user,
       status: user.status.toLowerCase() as User['status'],
-      role: user.role.toLowerCase() as User['role']
-    }));
+          }));
   }
 
   /**
@@ -244,7 +237,7 @@ class UserModel {
       ];
     }
 
-    return await prisma.user.count({ where });
+    return await prisma.users.count({ where });
   }
 
   /**
@@ -263,7 +256,7 @@ class UserModel {
       where.id = { not: excludeId };
     }
 
-    const user = await prisma.user.findFirst({
+    const user = await prisma.users.findFirst({
       where,
       select: { id: true }
     });
@@ -287,7 +280,7 @@ class UserModel {
       where.id = { not: excludeId };
     }
 
-    const user = await prisma.user.findFirst({
+    const user = await prisma.users.findFirst({
       where,
       select: { id: true }
     });
@@ -311,7 +304,7 @@ class UserModel {
       where.id = { not: excludeId };
     }
 
-    const user = await prisma.user.findFirst({
+    const user = await prisma.users.findFirst({
       where,
       select: { id: true }
     });
@@ -325,11 +318,11 @@ class UserModel {
    * @param loginIp - 登录IP
    */
   async updateLastLogin(id: number, loginIp?: string): Promise<void> {
-    await prisma.user.update({
+    await prisma.users.update({
       where: { id },
       data: {
         lastLoginAt: new Date(),
-        lastLoginIp: loginIp
+        ...(loginIp && { lastLoginIp: loginIp })
       }
     });
   }
@@ -363,7 +356,7 @@ class UserModel {
       ];
     }
 
-    const result = await paginate(prisma.user, {
+    const result = paginate(prisma.users, {
       page,
       limit,
       where,
@@ -376,7 +369,6 @@ class UserModel {
         nickname: true,
         avatar: true,
         status: true,
-        role: true,
         lastLoginAt: true,
         lastLoginIp: true,
         createdAt: true,
@@ -384,15 +376,18 @@ class UserModel {
       }
     });
 
-    // 计算总数和分页信息
-    const total = await prisma.user.count({ where });
+    // 等待查询结果
+    const [items, total] = await Promise.all([
+      result.items,
+      prisma.users.count({ where })
+    ]);
+
     const totalPages = Math.ceil(total / limit);
 
     return {
-      items: result.items.map(user => ({
+      items: items.map(user => ({
         ...user,
-        status: user.status.toLowerCase() as User['status'],
-        role: user.role.toLowerCase() as User['role']
+        status: user.status
       })),
       pagination: {
         page,

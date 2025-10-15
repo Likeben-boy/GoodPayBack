@@ -1,13 +1,10 @@
 import winston from 'winston';
-import dotenv from 'dotenv';
-
-// 加载环境变量
-dotenv.config();
+import config from '../config';
 
 // 常量配置
 const LOG_CONFIG = {
-  LEVEL: process.env.LOG_LEVEL || 'info',
-  LOG_FILE: process.env.LOG_FILE || 'app.log',
+  LEVEL: config.logLevel,
+  LOG_FILE: config.logFile,
   ERROR_FILE: 'error.log',
   SERVICE_NAME: 'user-service',
   TIMESTAMP_FORMAT: 'YYYY-MM-DD HH:mm:ss.SSS',
@@ -15,7 +12,7 @@ const LOG_CONFIG = {
 } as const;
 
 // 检查是否为开发环境
-const isDevelopment = process.env.NODE_ENV !== 'production';
+const isDevelopment = config.nodeEnv !== 'production';
 
 // 解构 winston 格式
 const { combine, timestamp, colorize, printf, align, errors } = winston.format;
@@ -129,5 +126,10 @@ export const createChildLogger = (defaultMeta: Record<string, any>) => {
 export const isLevelEnabled = (level: string): boolean => {
   return logger.isLevelEnabled(level);
 };
+
+// 创建专门的日志器
+export const dbLogger = createChildLogger({ component: 'database' });
+export const businessLogger = createChildLogger({ component: 'business' });
+export const securityLogger = createChildLogger({ component: 'security' });
 
 export default logger;

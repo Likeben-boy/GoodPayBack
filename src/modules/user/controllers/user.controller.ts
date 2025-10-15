@@ -45,11 +45,13 @@ class UserController {
    */
   async login(req: Request, res: Response): Promise<void> {
     try {
-      businessLogger.info('User login processing', {
+      businessLogger.debug('User login processing', {
         email: req.body.email,
         ip: req.ip,
         userAgent: req.get('User-Agent')
       });
+      //添加ip传递
+      req.body.loginIp = req.ip;
 
       const result = await userService.login(req.body);
 

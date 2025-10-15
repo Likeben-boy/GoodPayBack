@@ -1,9 +1,6 @@
 import rateLimit, { RateLimitRequestHandler, MemoryStore } from 'express-rate-limit';
-import * as dotenv from 'dotenv';
 import { ApiResponse } from '../types';
-
-// 加载环境变量
-dotenv.config();
+import config from '../config';
 
 /**
  * 创建限流响应
@@ -41,8 +38,8 @@ const createRateLimiter = (options: {
 };
 
 const generalLimiter: RateLimitRequestHandler = createRateLimiter({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
+  windowMs: config.rateLimitWindowMs,
+  max: config.rateLimitMaxRequests,
   message: '请求过于频繁，请稍后再试',
   code: 'RATE_LIMIT_EXCEEDED',
   prefix: 'rate_limit:'
@@ -54,7 +51,7 @@ const generalLimiter: RateLimitRequestHandler = createRateLimiter({
  */
 const loginLimiter: RateLimitRequestHandler = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15分钟
-  max: 5, // 最多5次尝试
+  max: 99, // 最多5次尝试
   message: '登录尝试过于频繁，请15分钟后再试',
   code: 'LOGIN_RATE_LIMIT_EXCEEDED',
   prefix: 'login_limit:'
@@ -66,7 +63,7 @@ const loginLimiter: RateLimitRequestHandler = createRateLimiter({
  */
 const registerLimiter: RateLimitRequestHandler = createRateLimiter({
   windowMs: 60 * 60 * 1000, // 1小时
-  max: 3, // 最多3次注册
+  max: 99, // 最多5次注册
   message: '注册尝试过于频繁，请1小时后再试',
   code: 'REGISTER_RATE_LIMIT_EXCEEDED',
   prefix: 'register_limit:'
@@ -77,7 +74,7 @@ const registerLimiter: RateLimitRequestHandler = createRateLimiter({
  */
 const passwordResetLimiter: RateLimitRequestHandler = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15分钟
-  max: 2, // 最多2次尝试
+  max: 99, // 最多2次尝试
   message: '密码重置尝试过于频繁，请15分钟后再试',
   code: 'PASSWORD_RESET_RATE_LIMIT_EXCEEDED',
   prefix: 'password_reset_limit:'
@@ -142,8 +139,8 @@ interface CustomLimiterOptions {
 
 const createLimiter = (options: CustomLimiterOptions): RateLimitRequestHandler => {
   const limiterOptions: any = {
-    windowMs: options.windowMs || parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
-    max: options.max || parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
+    windowMs: options.windowMs || config.rateLimitWindowMs,
+    max: options.max || config.rateLimitMaxRequests,
     message: options.message || '请求过于频繁，请稍后再试',
     code: options.code || 'CUSTOM_RATE_LIMIT_EXCEEDED',
     prefix: options.prefix || 'custom_limit:'

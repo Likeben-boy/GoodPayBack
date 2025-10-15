@@ -1,4 +1,5 @@
 // 用户相关类型定义
+import { users_status } from '@prisma/client';
 
 /**
  * 用户实体接口
@@ -16,10 +17,8 @@ export interface User {
   nickname: string | null;
   /** 用户头像URL，可选 */
   avatar?: string | null;
-  /** 用户状态：激活、未激活、被禁用 */
-  status: 'active' | 'inactive' | 'banned';
-  /** 用户角色 */
-  role?: string;
+  /** 用户状态 */
+  status: users_status;
   /** 最后登录时间，可选 */
   lastLoginAt?: Date | null;
   /** 最后登录IP地址，可选 */
@@ -49,7 +48,7 @@ export interface CreateUserInput {
   /** 用户头像URL，可选 */
   avatar?: string;
   /** 用户状态，可选 */
-  status?: string;
+  status?: users_status;
 }
 
 /**
@@ -78,6 +77,8 @@ export interface UserLoginInput {
   email?: string;
   /** 手机号码，可选 */
   phone?: string;
+//登陆ip
+  loginIp?:string;
 }
 
 /**
@@ -123,19 +124,23 @@ export interface Address {
   /** 详细地址 */
   detailedAddress: string;
   /** 邮政编码，可选 */
-  postalCode?: string;
+  postalCode?: string | null | undefined;
   /** 是否为默认地址 */
   isDefault: boolean;
   /** 创建时间 */
   createdAt: Date;
   /** 更新时间 */
   updatedAt: Date;
+  /** 软删除时间 */
+  deletedAt?: Date | null;
 }
 
 /**
  * 创建地址请求参数接口
  */
 export interface CreateAddressInput {
+  /** 所属用户ID */
+  userId: number;
   /** 收件人姓名 */
   recipient: string;
   /** 收件人手机号码 */
@@ -198,4 +203,6 @@ export interface TokenPair {
   refreshToken: string;
   /** 令牌过期时间 */
   expiresIn: string | number;
+//  刷新令牌过期时间
+  refreshExpiresIn: string | number;
 }

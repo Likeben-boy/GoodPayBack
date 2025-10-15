@@ -27,13 +27,13 @@
     "moduleResolution": "node",        // 使用 Node.js 的模块解析
     "baseUrl": "./src",
     "paths": {
-      "@/*": ["*"],
+      "@/*": [".*"],
       "@/config/*": ["config/*"],
       "@/utils/*": ["utils/*"],
       "@/middleware/*": ["middleware/*"],
       "@/modules/*": ["modules/*"],
       "@/database/*": ["database/*"],
-      // "@prisma/client": ["../node_modules/@prisma/client"]
+      "@/types/*": ["types/*"],
     }
   },
   "include": [

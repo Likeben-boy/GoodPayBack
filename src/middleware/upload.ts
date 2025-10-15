@@ -210,7 +210,19 @@ const setUploadDir = (dir: string) => {
  * 用于在请求处理完成后清理临时文件
  */
 const cleanupUpload = (req: Request, res: Response, next: (err?: any) => void): void => {
-  const files = req.files || (req.file ? [req.file] : []);
+  // 安全地获取文件列表
+  let files: Express.Multer.File[] = [];
+
+  if (req.files) {
+    if (Array.isArray(req.files)) {
+      files = req.files;
+    } else if (typeof req.files === 'object') {
+      // 如果是对象格式（如多字段上传），提取所有文件
+      files = Object.values(req.files).flat();
+    }
+  } else if (req.file) {
+    files = [req.file];
+  }
 
   res.on('finish', () => {
     files.forEach((file: Express.Multer.File) => {

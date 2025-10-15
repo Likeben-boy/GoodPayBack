@@ -1,9 +1,19 @@
-import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import config from '../config';
-import { ApiResponse } from '../types';
-import { JwtPayload } from '../types';
-import logger, { securityLogger } from '../utils/logger';
+import { ApiResponse } from '@/types/index';
+import { JwtPayload } from '@/types/index';
+import logger, { securityLogger } from '@/utils/logger';
+import {  generateToken,
+  verifyToken,
+  verifyAccessToken,
+  verifyRefreshToken,
+  decodeToken,
+  isTokenExpired,
+  getTokenRemainingTime,
+  generateTempToken,
+  verifyTempToken} from "@/utils/jwt";
+// import jwt from 'jsonwebtoken';
+
 
 // 扩展Request接口以包含用户信息
 declare global {
@@ -50,7 +60,7 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction): void =
     const token = authHeader.substring(7); // 移除 'Bearer ' 前缀
 
     try {
-      const decoded = jwt.verify(token, config.jwt.secret) as JwtPayload;
+      const decoded = jwt.verify(token);
       req.user = decoded;
 
       securityLogger.info('JWT authentication successful', {

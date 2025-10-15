@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import logger, { dbLogger } from '../utils/logger';
+import config from '../config';
 
 // 扩展全局类型以包含Prisma客户端
 declare global {
@@ -28,7 +29,7 @@ const createPrismaClient = (): PrismaClient => {
   });
 
   client.$on('error', (e) => {
-    logger.error('Database Error', {
+    dbLogger.error('Database Error', {
       message: e.message,
       target: e.target,
       timestamp: new Date().toISOString()
@@ -36,7 +37,7 @@ const createPrismaClient = (): PrismaClient => {
   });
 
   client.$on('warn', (e) => {
-    logger.warn('Database Warning', {
+    dbLogger.warn('Database Warning', {
       message: e.message,
       target: e.target,
       timestamp: new Date().toISOString()
@@ -58,7 +59,7 @@ const createPrismaClient = (): PrismaClient => {
 const prisma: PrismaClient = globalThis.__prisma || createPrismaClient();
 
 // 在开发环境中避免热重载时创建多个实例
-if (process.env.NODE_ENV === 'development') {
+if (config.nodeEnv === 'development') {
   globalThis.__prisma = prisma;
 }
 
@@ -66,12 +67,12 @@ if (process.env.NODE_ENV === 'development') {
 const testConnection = async (): Promise<void> => {
   try {
     await prisma.$connect();
-    logger.info('Prisma 数据库启动成功', {
+    dbLogger.info('Prisma 数据库启动成功', {
       service: 'prisma',
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Prisma 数据库启动失败', {
+    dbLogger.error('Prisma 数据库启动失败', {
       error: error instanceof Error ? error.message : 'Unknown error',
       service: 'prisma',
       timestamp: new Date().toISOString()
@@ -94,7 +95,7 @@ const executeRaw = async <T = any>(
 
     return await prisma.$queryRawUnsafe<T[]>(query, ...params);
   } catch (error) {
-    logger.error('Execute raw query error', {
+    dbLogger.error('Execute raw query error', {
       query: query.trim(),
       params: params.length > 0 ? params : undefined,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -222,12 +223,12 @@ const healthCheck = async (): Promise<{
 const disconnect = async (): Promise<void> => {
   try {
     await prisma.$disconnect();
-    logger.info('Prisma database disconnected successfully', {
+    dbLogger.info('Prisma database disconnected successfully', {
       service: 'prisma',
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Prisma database disconnect error', {
+    dbLogger.error('Prisma database disconnect error', {
       error: error instanceof Error ? error.message : 'Unknown error',
       service: 'prisma',
       timestamp: new Date().toISOString()

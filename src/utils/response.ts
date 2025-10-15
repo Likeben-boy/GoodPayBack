@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { ApiResponse, PaginationInfo, PaginatedResponse } from '../types';
+import config from '../config';
 
 /**
  * 成功响应工具函数
@@ -60,7 +61,7 @@ const errorResponse = (
   }
 
   // 开发环境下添加错误堆栈
-  if (process.env.NODE_ENV === 'development' && statusCode === 500) {
+  if (config.nodeEnv === 'development' && statusCode === 500) {
     (response as any).stack = new Error().stack;
   }
 

@@ -39,7 +39,6 @@ router.post('/register',
 router.post('/login',
   (req, res, next) => {
     securityLogger.info('User login attempt', {
-      email: req.body.email,
       ip: req.ip,
       userAgent: req.get('User-Agent')
     });

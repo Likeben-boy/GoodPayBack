@@ -1,6 +1,7 @@
-import { prisma } from '../../../database/prisma';
+// import { prisma } from '../../../database/prisma';
+import { prisma } from '@/database/prisma';
 import bcrypt from 'bcryptjs';
-import logger, { dbLogger, businessLogger } from '../../../utils/logger';
+import logger, { dbLogger, businessLogger } from '@/utils/logger';
 import {
   User,
   CreateUserInput,
@@ -12,7 +13,12 @@ import {
   UpdateAddressInput,
   LoginResult,
   TokenPair
-} from '../../../types/user';
+} from '@/types/user';
+import {
+  generateToken,
+  verifyToken,
+} from '@/utils/jwt'
+import { log } from 'console';
 
 class UserService {
   /**
@@ -21,6 +27,7 @@ class UserService {
    * @returns 注册结果
    */
   async register(userData: CreateUserInput): Promise<LoginResult> {
+    businessLogger.info('开始执行用户注册');
     dbLogger.debug('Database operation: user existence check', {
       operation: 'user.checkExists',
       username: userData.username,
@@ -91,7 +98,7 @@ class UserService {
     });
 
     // 生成JWT令牌
-    const tokens = this.generateToken(user.id);
+    const tokens = generateToken(user.id);
 
     // 记录日志
     logger.info(`User registered: ${user.id}`, {
@@ -117,7 +124,8 @@ class UserService {
    * @returns 登录结果
    */
   async login(loginData: UserLoginInput): Promise<LoginResult> {
-    const { username, password, email, phone } = loginData;
+    businessLogger.info('开始执行登陆操作');
+    const { username, password, email, phone,loginIp } = loginData;
 
     dbLogger.debug('Database operation: user lookup for login', {
       operation: 'user.lookup',
@@ -146,6 +154,7 @@ class UserService {
     }
 
     if (!user) {
+      businessLogger.info('用户不存在');
       dbLogger.warn('User lookup failed during login', {
         operation: 'user.login.failed',
         username,
@@ -157,6 +166,7 @@ class UserService {
     }
 
     if (user.status !== 'active') {
+      businessLogger.info('用户已被禁用');
       dbLogger.warn('User login attempt for disabled account', {
         operation: 'user.login.disabled',
         userId: user.id,
@@ -175,6 +185,7 @@ class UserService {
         username: user.username,
         reason: 'invalid_password'
       });
+      businessLogger.info('密码错误');
       throw { message: '密码错误', code: 'INVALID_PASSWORD' };
     }
 
@@ -183,18 +194,18 @@ class UserService {
       where: { id: user.id },
       data: {
         lastLoginAt: new Date(),
-        lastLoginIp: 'unknown' // 可以从请求中获取
+        lastLoginIp: loginIp || "unknown"
       }
     });
 
     // 生成JWT令牌
-    const tokens = this.generateToken(user.id);
+    const tokens = generateToken(user.id);
 
     // 记录日志
     logger.info(`User logged in: ${user.id}`, {
       userId: user.id,
       username: user.username,
-      ip: 'unknown'
+      ip: loginIp || "unknown"
     });
 
     // 移除密码字段
@@ -226,7 +237,7 @@ class UserService {
     const { refreshToken } = tokenData;
 
     try {
-      const decoded = this.verifyToken(refreshToken);
+      const decoded = verifyToken(refreshToken);
       const user = await prisma.users.findUnique({
         where: { id: decoded.userId }
       });
@@ -235,7 +246,7 @@ class UserService {
         throw { message: '用户不存在或已被禁用', code: 'USER_NOT_FOUND' };
       }
 
-      const tokens = this.generateToken(user.id);
+      const tokens = generateToken(user.id);
       return tokens;
     } catch (error) {
       throw { message: '刷新令牌无效或已过期', code: 'INVALID_REFRESH_TOKEN' };
@@ -412,7 +423,14 @@ class UserService {
     const address = await prisma.addresses.create({
       data: {
         userId,
-        ...addressData
+        recipient: addressData.recipient,
+        phone: addressData.phone,
+        province: addressData.province,
+        city: addressData.city,
+        district: addressData.district,
+        detailedAddress: addressData.detailedAddress,
+        postalCode: addressData.postalCode || null,
+        isDefault: addressData.isDefault || false
       }
     });
 
@@ -513,45 +531,6 @@ class UserService {
     });
   }
 
-  /**
-   * 生成JWT令牌
-   * @param userId - 用户ID
-   * @returns JWT令牌对
-   */
-  private generateToken(userId: number): TokenPair {
-    const jwt = require('jsonwebtoken');
-    const config = require('../../../config');
-
-    const accessToken = jwt.sign(
-      { userId, type: 'access' },
-      config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn || '15m' }
-    );
-
-    const refreshToken = jwt.sign(
-      { userId, type: 'refresh' },
-      config.jwt.refreshSecret,
-      { expiresIn: config.jwt.refreshExpiresIn || '7d' }
-    );
-
-    return {
-      accessToken,
-      refreshToken,
-      expiresIn: config.jwt.expiresIn || '15m'
-    };
-  }
-
-  /**
-   * 验证JWT令牌
-   * @param token - JWT令牌
-   * @returns 解码后的令牌数据
-   */
-  private verifyToken(token: string): any {
-    const jwt = require('jsonwebtoken');
-    const config = require('../../../config');
-
-    return jwt.verify(token, config.jwt.refreshSecret);
-  }
 }
 
 // 导出单例实例
