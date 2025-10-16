@@ -76,7 +76,7 @@ export interface RequestUser {
   email?: string;
 }
 
-enum JwtType {
+export enum JwtType {
 
   //访问令牌
   normal,

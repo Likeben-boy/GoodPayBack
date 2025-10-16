@@ -13,8 +13,8 @@ interface DatabaseConfig {
 interface JwtConfig {
   secret: string;
   refreshSecret: string;
-  expiresIn: string | number;
-  refreshExpiresIn: string | number;
+  expiresIn: string;
+  refreshExpiresIn: string;
 }
 
 // 应用配置接口

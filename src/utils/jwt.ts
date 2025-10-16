@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import config from "../config";
 import logger from "./logger";
-import { JwtPayload,JwtPayloadOut,JwtType } from "../types";
+import { JwtPayload, JwtPayloadOut, JwtType } from "../types";
 import { TokenPair } from "../types/user";
 
 /**
@@ -14,13 +14,21 @@ const generateToken = (
   userId: number,
   payload: Partial<JwtPayload> = {}
 ): TokenPair => {
+  //生成访问令牌对象
   const normalTokenPayload: JwtPayload = {
     userId,
-    type:JwtType.normal,
+    type: JwtType.normal,
     iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(addTime(new Date(), config.jwt.expiresIn) / 1000),
   };
 
-  
+  //生成刷新令牌
+  const refreshTokenPayload: JwtPayload = {
+    userId,
+    type: JwtType.refresh,
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(addTime(new Date(), config.jwt.refreshExpiresIn) / 1000),
+  };
 
   // 生成访问令牌
   const accessToken = jwt.sign(normalTokenPayload, config.jwt.secret, {
@@ -28,11 +36,9 @@ const generateToken = (
   } as any);
 
   // 生成刷新令牌
-  const refreshToken = jwt.sign(
-    { userId, type: "refresh" },
-    config.jwt.secret,
-    { expiresIn: config.jwt.refreshExpiresIn } as any
-  );
+  const refreshToken = jwt.sign(refreshTokenPayload, config.jwt.secret, {
+    expiresIn: config.jwt.refreshExpiresIn,
+  } as any);
 
   logger.info(`Token generated for user: ${userId}`);
 
@@ -44,7 +50,26 @@ const generateToken = (
   };
 };
 
-
+//增加时间的工具方法 参数中接收jwt参数中的5d或者其他格式的数字。
+const addTime = (date: Date, amount: String): number => {
+  const result = new Date(date);
+  const addNum: number = Number(amount.substring(0, 1));
+  const unit: String = amount.substring(1, 2);
+  switch (unit) {
+    case "d":
+      result.setDate(result.getDate() + addNum);
+      break;
+    case "m":
+      result.setMinutes(result.getMinutes() + addNum);
+      break;
+    case "s":
+      result.setSeconds(result.getSeconds() + addNum);
+      break;
+    default:
+      new Error("不支持的类型参数");
+  }
+  return result.getTime();
+};
 
 /**
  * 验证JWT令牌
@@ -52,10 +77,10 @@ const generateToken = (
  * @returns 解码后的载荷数据
  */
 const verifyToken = (token: string): JwtPayloadOut => {
-  const out: JwtPayloadOut ={
-    isExpired:false,
-    isValid:false,
-  }
+  const out: JwtPayloadOut = {
+    isExpired: false,
+    isValid: false,
+  };
   try {
     out.jwtPayload = jwt.verify(token, config.jwt.secret) as JwtPayload;
   } catch (jwtError) {
@@ -68,7 +93,7 @@ const verifyToken = (token: string): JwtPayloadOut => {
     if (jwtError instanceof jwt.TokenExpiredError) {
       out.isExpired = true;
     } else if (jwtError instanceof jwt.JsonWebTokenError) {
-       out.isValid = true;
+      out.isValid = true;
     }
   }
   return out;
@@ -113,15 +138,26 @@ const verifyRefreshToken = (token: string): JwtPayloadOut => {
  * @returns 解码后的载荷数据
  */
 const decodeToken = (token: string): JwtPayloadOut => {
+  const out: JwtPayloadOut = {
+    isExpired: false,
+    isValid: false,
+  };
   try {
-    return jwt.decode(token) as JwtPayload;
-  } catch (error) {
+    out.jwtPayload = jwt.decode(token) as JwtPayload;
+  } catch (jwtError) {
     logger.error(
-      "Token decode failed:",
-      error instanceof Error ? error.message : "Unknown error"
+      "令牌验证失败:",
+      jwtError instanceof Error ? jwtError.message : "Unknown error"
     );
-    return null;
+
+    //判断是过期还是无效
+    if (jwtError instanceof jwt.TokenExpiredError) {
+      out.isExpired = true;
+    } else if (jwtError instanceof jwt.JsonWebTokenError) {
+      out.isValid = true;
+    }
   }
+  return out;
 };
 
 /**
@@ -132,10 +168,11 @@ const decodeToken = (token: string): JwtPayloadOut => {
 const getTokenRemainingTime = (token: string): number => {
   try {
     const decoded = decodeToken(token);
-    if (!decoded || !decoded.exp) {
+    if (!decoded.jwtPayload || !decoded.jwtPayload.exp) {
       return 0;
     }
-    const remainingTime = decoded.exp - Math.floor(Date.now() / 1000);
+    const remainingTime =
+      decoded.jwtPayload.exp - Math.floor(Date.now() / 1000);
     return Math.max(0, remainingTime);
   } catch (error) {
     return 0;
@@ -157,7 +194,7 @@ const generateTempToken = (
   const payload = {
     userId,
     purpose,
-    type: "temp",
+    type: JwtType.temp,
   };
 
   return jwt.sign(payload, config.jwt.secret, { expiresIn });
@@ -170,24 +207,16 @@ const generateTempToken = (
  * @returns 解码后的载荷数据
  */
 const verifyTempToken = (token: string, purpose: string): JwtPayloadOut => {
-  try {
-    const decoded = jwt.verify(token, config.jwt.secret) as JwtPayload;
+  const decoded = verifyToken(token);
 
-    if (
-      (decoded as any).type !== "temp" ||
-      (decoded as any).purpose !== purpose
-    ) {
-      throw new Error("Invalid token type or purpose");
-    }
-
-    return decoded;
-  } catch (error) {
-    logger.error(
-      "Temp token verification failed:",
-      error instanceof Error ? error.message : "Unknown error"
-    );
-    throw error;
+  if (
+    (decoded as any).type !== "temp" ||
+    (decoded as any).purpose !== purpose
+  ) {
+    throw new Error("Invalid token type or purpose");
   }
+
+  return decoded;
 };
 
 export {
