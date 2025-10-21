@@ -1,16 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import config from '../config';
 import { ApiResponse } from '@/types/index';
 import { JwtPayload } from '@/types/index';
 import logger, { securityLogger } from '@/utils/logger';
-import {  generateToken,
-  verifyAccessToken,
-  verifyRefreshToken,
-  decodeToken,
-  getTokenRemainingTime,
-  generateTempToken,
-  verifyTempToken} from "@/utils/jwt";
-// import jwt from 'jsonwebtoken';
+import { verifyAccessToken } from "@/utils/jwt";
 
 
 // 扩展Request接口以包含用户信息

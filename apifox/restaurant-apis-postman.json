@@ -1,0 +1,1023 @@
+{
+  "info": {
+    "name": "餐厅相关接口测试",
+    "description": "测试餐厅管理相关的所有API接口，包括餐厅列表、详情、菜单、搜索等功能",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "restaurant-apis-collection",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "item": [
+    {
+      "name": "餐厅基础接口",
+      "item": [
+        {
+          "name": "获取餐厅列表 - 基本查询",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants"
+              ]
+            },
+            "description": "获取餐厅列表，默认按创建时间排序，每页10条记录"
+          },
+          "response": []
+        },
+        {
+          "name": "获取餐厅列表 - 带分页和排序",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants?page=1&limit=5&sortBy=rating&sortOrder=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "页码"
+                },
+                {
+                  "key": "limit",
+                  "value": "5",
+                  "description": "每页数量"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "rating",
+                  "description": "排序字段：createdAt, rating, distance, deliveryTime"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc",
+                  "description": "排序方向：asc, desc"
+                }
+              ]
+            },
+            "description": "测试分页和按评分排序"
+          },
+          "response": []
+        },
+        {
+          "name": "获取餐厅列表 - 带筛选条件",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants?minRating=4.5&maxDistance=3&tags=快餐,外卖",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants"
+              ],
+              "query": [
+                {
+                  "key": "minRating",
+                  "value": "4.5",
+                  "description": "最低评分"
+                },
+                {
+                  "key": "maxDistance",
+                  "value": "3",
+                  "description": "最大距离(公里)"
+                },
+                {
+                  "key": "tags",
+                  "value": "快餐,外卖",
+                  "description": "标签过滤(多个用逗号分隔)"
+                }
+              ]
+            },
+            "description": "测试按评分、距离和标签筛选餐厅"
+          },
+          "response": []
+        },
+        {
+          "name": "获取餐厅详情 - 存在的餐厅",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "1"
+              ]
+            },
+            "description": "获取ID为1的餐厅详情信息"
+          },
+          "response": []
+        },
+        {
+          "name": "获取餐厅详情 - 不存在的餐厅",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/99999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "99999"
+              ]
+            },
+            "description": "测试获取不存在的餐厅ID，应该返回404错误"
+          },
+          "response": []
+        },
+        {
+          "name": "获取餐厅详情 - 无效的ID格式",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/invalid-id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "invalid-id"
+              ]
+            },
+            "description": "测试无效的ID格式，应该返回参数错误"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "餐厅搜索接口",
+      "item": [
+        {
+          "name": "搜索餐厅 - 关键词搜索",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/search?keyword=川菜",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "keyword",
+                  "value": "川菜",
+                  "description": "搜索关键词"
+                }
+              ]
+            },
+            "description": "搜索包含'川菜'关键词的餐厅"
+          },
+          "response": []
+        },
+        {
+          "name": "搜索餐厅 - 带分页",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/search?keyword=外卖&page=1&limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "keyword",
+                  "value": "外卖",
+                  "description": "搜索关键词"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "页码"
+                },
+                {
+                  "key": "limit",
+                  "value": "5",
+                  "description": "每页数量"
+                }
+              ]
+            },
+            "description": "搜索包含'外卖'关键词的餐厅，并设置分页"
+          },
+          "response": []
+        },
+        {
+          "name": "搜索餐厅 - 缺少关键词",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "search"
+              ]
+            },
+            "description": "测试缺少搜索关键词，应该返回400错误"
+          },
+          "response": []
+        },
+        {
+          "name": "搜索餐厅 - 空关键词",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/search?keyword=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "keyword",
+                  "value": "",
+                  "description": "空的搜索关键词"
+                }
+              ]
+            },
+            "description": "测试空的搜索关键词，应该返回400错误"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "餐厅推荐接口",
+      "item": [
+        {
+          "name": "获取热门餐厅 - 默认数量",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/popular",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "popular"
+              ]
+            },
+            "description": "获取热门餐厅列表，默认返回10个"
+          },
+          "response": []
+        },
+        {
+          "name": "获取热门餐厅 - 指定数量",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/popular?limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "popular"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5",
+                  "description": "返回数量限制"
+                }
+              ]
+            },
+            "description": "获取前5个热门餐厅"
+          },
+          "response": []
+        },
+        {
+          "name": "获取附近餐厅 - 默认距离",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/nearby",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "nearby"
+              ]
+            },
+            "description": "获取5公里内的附近餐厅，默认返回10个"
+          },
+          "response": []
+        },
+        {
+          "name": "获取附近餐厅 - 自定义距离和数量",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/nearby?maxDistance=10&limit=8",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "nearby"
+              ],
+              "query": [
+                {
+                  "key": "maxDistance",
+                  "value": "10",
+                  "description": "最大距离(公里)"
+                },
+                {
+                  "key": "limit",
+                  "value": "8",
+                  "description": "返回数量限制"
+                }
+              ]
+            },
+            "description": "获取10公里内的8个附近餐厅"
+          },
+          "response": []
+        },
+        {
+          "name": "获取餐厅标签列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/tags",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "tags"
+              ]
+            },
+            "description": "获取所有可用的餐厅标签列表"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "餐厅菜单接口",
+      "item": [
+        {
+          "name": "获取餐厅完整菜单 - 存在的餐厅",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/1/menu",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "1",
+                "menu"
+              ]
+            },
+            "description": "获取餐厅ID为1的完整菜单，包括所有分类和菜品"
+          },
+          "response": []
+        },
+        {
+          "name": "获取餐厅完整菜单 - 不存在的餐厅",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/99999/menu",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "99999",
+                "menu"
+              ]
+            },
+            "description": "测试获取不存在餐厅的菜单，应该返回404错误"
+          },
+          "response": []
+        },
+        {
+          "name": "获取指定分类的菜品 - 存在的分类",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/1/categories/1/dishes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "1",
+                "categories",
+                "1",
+                "dishes"
+              ]
+            },
+            "description": "获取餐厅ID为1的分类ID为1下的所有菜品"
+          },
+          "response": []
+        },
+        {
+          "name": "获取指定分类的菜品 - 不存在的分类",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/1/categories/99999/dishes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "1",
+                "categories",
+                "99999",
+                "dishes"
+              ]
+            },
+            "description": "测试获取不存在分类的菜品"
+          },
+          "response": []
+        },
+        {
+          "name": "获取指定分类的菜品 - 不存在的餐厅",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/99999/categories/1/dishes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "99999",
+                "categories",
+                "1",
+                "dishes"
+              ]
+            },
+            "description": "测试从不存在的餐厅获取分类菜品，应该返回404错误"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "管理员接口",
+      "item": [
+        {
+          "name": "创建餐厅 - 成功创建",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "description": "管理员JWT令牌"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"测试餐厅-川菜馆\",\n  \"image\": \"https://example.com/restaurant-image.jpg\",\n  \"rating\": 4.5,\n  \"distance\": 2.5,\n  \"deliveryFee\": 15.00,\n  \"deliveryTime\": 30,\n  \"status\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants"
+              ]
+            },
+            "description": "管理员创建新餐厅"
+          },
+          "response": []
+        },
+        {
+          "name": "创建餐厅 - 缺少必需字段",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "description": "管理员JWT令牌"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4.5,\n  \"distance\": 2.5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants"
+              ]
+            },
+            "description": "测试缺少必需字段name，应该返回验证错误"
+          },
+          "response": []
+        },
+        {
+          "name": "创建餐厅 - 未授权访问",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"未授权创建的餐厅\",\n  \"image\": \"https://example.com/restaurant-image.jpg\",\n  \"rating\": 4.5,\n  \"distance\": 2.5,\n  \"deliveryFee\": 15.00,\n  \"deliveryTime\": 30,\n  \"status\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants"
+              ]
+            },
+            "description": "测试未授权创建餐厅，应该返回401错误"
+          },
+          "response": []
+        },
+        {
+          "name": "更新餐厅信息 - 成功更新",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "description": "管理员JWT令牌"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"更新后的餐厅名称\",\n  \"rating\": 4.8,\n  \"deliveryFee\": 20.00,\n  \"status\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "1"
+              ]
+            },
+            "description": "管理员更新餐厅ID为1的信息"
+          },
+          "response": []
+        },
+        {
+          "name": "更新餐厅信息 - 不存在的餐厅",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "description": "管理员JWT令牌"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"更新不存在的餐厅\",\n  \"rating\": 4.8\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/99999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "99999"
+              ]
+            },
+            "description": "测试更新不存在的餐厅，应该返回404错误"
+          },
+          "response": []
+        },
+        {
+          "name": "删除餐厅 - 成功删除",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "description": "管理员JWT令牌"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "2"
+              ]
+            },
+            "description": "管理员软删除餐厅ID为2的餐厅"
+          },
+          "response": []
+        },
+        {
+          "name": "删除餐厅 - 不存在的餐厅",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "description": "管理员JWT令牌"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/99999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "99999"
+              ]
+            },
+            "description": "测试删除不存在的餐厅，应该返回404错误"
+          },
+          "response": []
+        },
+        {
+          "name": "删除餐厅 - 未授权访问",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "1"
+              ]
+            },
+            "description": "测试未授权删除餐厅，应该返回401错误"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "异常场景测试",
+      "item": [
+        {
+          "name": "获取餐厅列表 - 无效的分页参数",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants?page=-1&limit=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "-1",
+                  "description": "无效的页码"
+                },
+                {
+                  "key": "limit",
+                  "value": "0",
+                  "description": "无效的每页数量"
+                }
+              ]
+            },
+            "description": "测试无效的分页参数处理"
+          },
+          "response": []
+        },
+        {
+          "name": "获取餐厅列表 - 无效的排序字段",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants?sortBy=invalidField&sortOrder=invalidOrder",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants"
+              ],
+              "query": [
+                {
+                  "key": "sortBy",
+                  "value": "invalidField",
+                  "description": "无效的排序字段"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "invalidOrder",
+                  "description": "无效的排序方向"
+                }
+              ]
+            },
+            "description": "测试无效的排序参数处理"
+          },
+          "response": []
+        },
+        {
+          "name": "获取热门餐厅 - 无效的limit参数",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/popular?limit=-5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "popular"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "-5",
+                  "description": "负数限制"
+                }
+              ]
+            },
+            "description": "测试负数的limit参数"
+          },
+          "response": []
+        },
+        {
+          "name": "获取附近餐厅 - 无效的距离参数",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/nearby?maxDistance=0&limit=abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "nearby"
+              ],
+              "query": [
+                {
+                  "key": "maxDistance",
+                  "value": "0",
+                  "description": "零距离"
+                },
+                {
+                  "key": "limit",
+                  "value": "abc",
+                  "description": "非数字限制"
+                }
+              ]
+            },
+            "description": "测试无效的距离和数量参数"
+          },
+          "response": []
+        },
+        {
+          "name": "更新餐厅 - 无效的ID格式",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"测试更新\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/invalid-format",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "invalid-format"
+              ]
+            },
+            "description": "测试无效的餐厅ID格式"
+          },
+          "response": []
+        },
+        {
+          "name": "删除餐厅 - 无效的ID格式",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/restaurants/abc123",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "abc123"
+              ]
+            },
+            "description": "测试无效的餐厅ID格式删除"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string",
+      "description": "API基础URL"
+    },
+    {
+      "key": "adminToken",
+      "value": "your-admin-jwt-token-here",
+      "type": "string",
+      "description": "管理员JWT令牌，需要先通过登录接口获取"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// 全局前置请求脚本",
+          "// 可以在这里添加全局的请求处理逻辑",
+          "console.log('执行前置请求脚本');"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// 全局测试脚本",
+          "// 基本的状态码检查",
+          "pm.test('Status code is successful', function () {",
+          "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204, 400, 401, 404]);",
+          "});",
+          "",
+          "// 检查响应内容类型",
+          "pm.test('Content-Type is present', function () {",
+          "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+          "});",
+          "",
+          "// 检查响应体结构",
+          "pm.test('Response has valid structure', function () {",
+          "    const responseJson = pm.response.json();",
+          "    pm.expect(responseJson).to.have.property('code');",
+          "    pm.expect(responseJson).to.have.property('message');",
+          "});"
+        ]
+      }
+    }
+  ]
+}
