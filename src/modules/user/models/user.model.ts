@@ -1,6 +1,5 @@
 import { prisma, softDelete, paginate } from '../../../database/prisma';
 import { User, CreateUserInput, UpdateUserInput } from '../../../types/user';
-import { users_status } from '@prisma/client';
 
 class UserModel {
   /**
@@ -11,13 +10,11 @@ class UserModel {
   async create(userData: CreateUserInput): Promise<number> {
     const user = await prisma.users.create({
       data: {
-        username: userData.username,
-        email: userData.email || '',
-        phone: userData.phone || null,
+        username: userData.phone, // 使用手机号作为用户名
+        phone: userData.phone,
         password: userData.password,
-        nickname: userData.nickname || userData.username,
-        avatar: userData.avatar || null,
-        status: userData.status || users_status.active
+        avatar: null,
+        status: true,
       }
     });
     return user.id;
@@ -37,13 +34,10 @@ class UserModel {
       select: {
         id: true,
         username: true,
-        email: true,
         phone: true,
         nickname: true,
         avatar: true,
         status: true,
-        lastLoginAt: true,
-        lastLoginIp: true,
         createdAt: true,
         updatedAt: true
       }
@@ -74,7 +68,7 @@ class UserModel {
 
     return {
       ...user,
-      status: user.status.toLowerCase() as User['status'],
+      status: Boolean(user.status),
           };
   }
 
@@ -95,7 +89,7 @@ class UserModel {
 
     return {
       ...user,
-      status: user.status.toLowerCase() as User['status'],
+      status: Boolean(user.status),
           };
   }
 
@@ -116,7 +110,7 @@ class UserModel {
 
     return {
       ...user,
-      status: user.status.toLowerCase() as User['status'],
+      status: Boolean(user.status),
           };
   }
 
@@ -172,15 +166,14 @@ class UserModel {
       deletedAt: null
     };
 
-    if (status) {
-      where.status = status.toUpperCase();
+    if (status !== undefined) {
+      where.status = Boolean(status);
     }
 
     if (keyword) {
       where.OR = [
         { username: { contains: keyword } },
-        { email: { contains: keyword } },
-        { nickname: { contains: keyword } }
+        { phone: { contains: keyword } }
       ];
     }
 
@@ -189,15 +182,12 @@ class UserModel {
       select: {
         id: true,
         username: true,
-        email: true,
         phone: true,
-        nickname: true,
         avatar: true,
         status: true,
-        lastLoginAt: true,
-        lastLoginIp: true,
         createdAt: true,
-        updatedAt: true
+        updatedAt: true,
+        password: true
       },
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
@@ -206,7 +196,7 @@ class UserModel {
 
     return users.map(user => ({
       ...user,
-      status: user.status.toLowerCase() as User['status'],
+      status: Boolean(user.status),
           }));
   }
 
@@ -225,15 +215,14 @@ class UserModel {
       deletedAt: null
     };
 
-    if (status) {
-      where.status = status.toUpperCase();
+    if (status !== undefined) {
+      where.status = Boolean(status);
     }
 
     if (keyword) {
       where.OR = [
         { username: { contains: keyword } },
-        { email: { contains: keyword } },
-        { nickname: { contains: keyword } }
+        { phone: { contains: keyword } }
       ];
     }
 
@@ -344,15 +333,14 @@ class UserModel {
       deletedAt: null
     };
 
-    if (status) {
-      where.status = status.toUpperCase();
+    if (status !== undefined) {
+      where.status = Boolean(status);
     }
 
     if (keyword) {
       where.OR = [
         { username: { contains: keyword } },
-        { email: { contains: keyword } },
-        { nickname: { contains: keyword } }
+        { phone: { contains: keyword } }
       ];
     }
 
@@ -364,15 +352,12 @@ class UserModel {
       select: {
         id: true,
         username: true,
-        email: true,
         phone: true,
-        nickname: true,
         avatar: true,
         status: true,
-        lastLoginAt: true,
-        lastLoginIp: true,
         createdAt: true,
-        updatedAt: true
+        updatedAt: true,
+        password: true
       }
     });
 
@@ -387,7 +372,7 @@ class UserModel {
     return {
       items: items.map(user => ({
         ...user,
-        status: user.status
+        status: Boolean(user.status)
       })),
       pagination: {
         page,

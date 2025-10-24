@@ -8,114 +8,78 @@ datasource db {
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
-model users {
-  id                                           Int                        @id @default(autoincrement())
-  username                                     String                     @unique(map: "username") @db.VarChar(50)
-  phone                                        String                     @unique(map: "phone") @db.VarChar(20)
-  password                                     String                     @db.VarChar(255)
-  avatar                                       String?                    @db.VarChar(255)
-  nickname                                     String?                    @db.VarChar(50)
-  status                                       Int                        @default(1) @db.TinyInt
-  createdAt                                    DateTime                   @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt                                    DateTime                   @default(now()) @map("updated_at") @db.DateTime(0)
-  deletedAt                                    DateTime?                  @map("deleted_at") @db.DateTime(0)
-  deliveryInfo                                 delivery_info[]
-  orderReviews                                 order_reviews[]
-  orderStatusLogs                              order_status_logs[]
-  orders                                       orders[]
-  paymentRecords                               payment_records[]
-  refundRecordsRefundRecordsUserIdTousers      refund_records[]           @relation("refund_records_user_idTousers")
-  refundRecordsRefundRecordsProcessorIdTousers refund_records[]           @relation("refund_records_processor_idTousers")
-  restaurantTagRelations                       restaurant_tag_relations[]
-  shoppingCart                                 shopping_cart[]
-  userAddresses                                user_addresses[]
-  userCoupons                                  user_coupons[]
-
-  @@index([phone], map: "idx_phone")
-  @@index([username], map: "idx_username")
-  @@index([deletedAt], map: "idx_deleted_at")
-  @@index([status], map: "idx_status")
-}
-
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model coupons {
-  id            Int                 @id @default(autoincrement())
-  couponName    String              @map("coupon_name") @db.VarChar(100)
-  couponType    coupons_coupon_type @map("coupon_type")
-  discountValue Decimal             @map("discount_value") @db.Decimal(10, 2)
-  minAmount     Decimal?            @default(0.00) @map("min_amount") @db.Decimal(10, 2)
-  maxDiscount   Decimal?            @map("max_discount") @db.Decimal(10, 2)
-  totalCount    Int                 @default(0) @map("total_count")
-  usedCount     Int                 @default(0) @map("used_count")
-  validFrom     DateTime            @map("valid_from") @db.DateTime(0)
-  validUntil    DateTime            @map("valid_until") @db.DateTime(0)
-  status        coupons_status      @default(active)
-  createdAt     DateTime            @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt     DateTime            @default(now()) @map("updated_at") @db.DateTime(0)
-  deletedAt     DateTime?           @map("deleted_at") @db.DateTime(0)
-  orders        orders[]
-  userCoupons   user_coupons[]
+model Coupons {
+  id             Int                 @id @default(autoincrement())
+  couponName String              @db.VarChar(100) @map("coupon_name")
+  couponType coupons_coupon_type @map("coupon_type")
+  discountValue Decimal             @db.Decimal(10, 2) @map("discount_value")
+  minAmount Decimal?            @default(0.00) @db.Decimal(10, 2) @map("min_amount")
+  maxDiscount Decimal?            @db.Decimal(10, 2) @map("max_discount")
+  totalCount Int                 @default(0) @map("total_count")
+  usedCount Int                 @default(0) @map("used_count")
+  validFrom DateTime            @db.DateTime(0) @map("valid_from")
+  validUntil DateTime            @db.DateTime(0) @map("valid_until")
+  status         coupons_status      @default(active)
+  createdAt DateTime            @default(now()) @db.DateTime(0) @map("created_at")
+  updatedAt DateTime            @default(now()) @db.DateTime(0) @map("updated_at")
+  deletedAt DateTime?           @db.DateTime(0) @map("deleted_at")
 
   @@index([couponType], map: "idx_coupon_type")
   @@index([deletedAt], map: "idx_deleted_at")
   @@index([status], map: "idx_status")
   @@index([validFrom, validUntil], map: "idx_valid_period")
+  @@map("coupons")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model delivery_info {
-  id               Int                           @id @default(autoincrement())
-  orderId          Int                           @unique(map: "uk_order_id") @map("order_id")
-  deliveryUserId   Int?                          @map("delivery_user_id")
-  deliveryStatus   delivery_info_delivery_status @default(assigned) @map("delivery_status")
-  assignedAt       DateTime?                     @map("assigned_at") @db.DateTime(0)
-  pickedUpAt       DateTime?                     @map("picked_up_at") @db.DateTime(0)
-  deliveredAt      DateTime?                     @map("delivered_at") @db.DateTime(0)
-  deliveryDistance Decimal?                      @map("delivery_distance") @db.Decimal(8, 2)
-  deliveryDuration Int?                          @map("delivery_duration")
-  createdAt        DateTime                      @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt        DateTime                      @default(now()) @map("updated_at") @db.DateTime(0)
-  orders           orders                        @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "delivery_info_ibfk_1")
-  users            users?                        @relation(fields: [deliveryUserId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "delivery_info_ibfk_2")
+model DeliveryInfo {
+  id                Int                           @id @default(autoincrement())
+  orderId Int                           @unique(map: "uk_order_id") @map("order_id")
+  deliveryUserId Int? @map("delivery_user_id")
+  deliveryStatus delivery_info_delivery_status @default(assigned) @map("delivery_status")
+  assignedAt DateTime?                     @db.DateTime(0) @map("assigned_at")
+  pickedUpAt DateTime?                     @db.DateTime(0) @map("picked_up_at")
+  deliveredAt DateTime?                     @db.DateTime(0) @map("delivered_at")
+  deliveryDistance Decimal?                      @db.Decimal(8, 2) @map("delivery_distance")
+  deliveryDuration Int? @map("delivery_duration")
+  createdAt DateTime                      @default(now()) @db.DateTime(0) @map("created_at")
+  updatedAt DateTime                      @default(now()) @db.DateTime(0) @map("updated_at")
 
   @@index([deliveryStatus], map: "idx_delivery_status")
   @@index([deliveryUserId], map: "idx_delivery_user_id")
+  @@map("delivery_info")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model dish_categories {
-  id           Int         @id @default(autoincrement())
-  restaurantId Int         @map("restaurant_id")
-  name         String      @db.VarChar(50)
-  sortOrder    Int         @default(0) @map("sort_order")
-  status       Int         @default(1) @db.TinyInt
-  createdAt    DateTime    @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt    DateTime    @default(now()) @map("updated_at") @db.DateTime(0)
-  restaurants  restaurants @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "dish_categories_ibfk_1")
-  dishes       dishes[]
+model DishCategories {
+  id            Int      @id @default(autoincrement())
+  restaurantId Int @map("restaurant_id")
+  name          String   @db.VarChar(50)
+  sortOrder Int      @default(0) @map("sort_order")
+  status        Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.DateTime(0) @map("created_at")
+  updatedAt DateTime @default(now()) @db.DateTime(0) @map("updated_at")
 
   @@index([restaurantId], map: "idx_restaurant_id")
   @@index([sortOrder], map: "idx_sort_order")
+  @@map("dish_categories")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model dishes {
-  id             Int             @id @default(autoincrement())
-  restaurantId   Int             @map("restaurant_id")
-  categoryId     Int             @map("category_id")
-  name           String          @db.VarChar(100)
-  description    String?         @db.Text
-  price          Decimal         @default(0.00) @db.Decimal(8, 2)
-  image          String?         @db.VarChar(255)
-  status         Int             @default(1) @db.TinyInt
-  salesCount     Int             @default(0) @map("sales_count")
-  createdAt      DateTime        @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt      DateTime        @default(now()) @map("updated_at") @db.DateTime(0)
-  deletedAt      DateTime?       @map("deleted_at") @db.DateTime(0)
-  restaurants    restaurants     @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "dishes_ibfk_1")
-  dishCategories dish_categories @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "dishes_ibfk_2")
-  orderItems     order_items[]
-  shoppingCart   shopping_cart[]
+model Dishes {
+  id            Int       @id @default(autoincrement())
+  restaurantId Int @map("restaurant_id")
+  categoryId Int @map("category_id")
+  name          String    @db.VarChar(100)
+  description   String?   @db.Text
+  price         Decimal   @default(0.00) @db.Decimal(8, 2)
+  image         String?   @db.VarChar(255)
+  status        Boolean   @default(true)
+  salesCount Int       @default(0) @map("sales_count")
+  createdAt DateTime  @default(now()) @db.DateTime(0) @map("created_at")
+  updatedAt DateTime  @default(now()) @db.DateTime(0) @map("updated_at")
+  deletedAt DateTime? @db.DateTime(0) @map("deleted_at")
 
   @@index([categoryId], map: "idx_category_id")
   @@index([deletedAt], map: "idx_deleted_at")
@@ -123,114 +87,96 @@ model dishes {
   @@index([restaurantId], map: "idx_restaurant_id")
   @@index([salesCount], map: "idx_sales_count")
   @@index([status], map: "idx_status")
+  @@map("dishes")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model order_items {
-  id           Int      @id @default(autoincrement())
-  orderId      Int      @map("order_id")
-  dishId       Int      @map("dish_id")
-  dishName     String   @map("dish_name") @db.VarChar(100)
-  dishImage    String?  @map("dish_image") @db.VarChar(255)
-  dishPrice    Decimal  @map("dish_price") @db.Decimal(8, 2)
-  quantity     Int      @default(1)
-  selectedSpec String?  @map("selected_spec") @db.VarChar(100)
-  subtotal     Decimal  @db.Decimal(10, 2)
-  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(0)
-  orders       orders   @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "order_items_ibfk_1")
-  dishes       dishes   @relation(fields: [dishId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "order_items_ibfk_2")
+model OrderItems {
+  id            Int      @id @default(autoincrement())
+  orderId Int @map("order_id")
+  dishId Int @map("dish_id")
+  dishName String   @db.VarChar(100) @map("dish_name")
+  dishImage String?  @db.VarChar(255) @map("dish_image")
+  dishPrice Decimal  @db.Decimal(8, 2) @map("dish_price")
+  quantity      Int      @default(1)
+  selectedSpec String?  @db.VarChar(100) @map("selected_spec")
+  subtotal      Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now()) @db.DateTime(0) @map("created_at")
 
   @@index([dishId], map: "idx_dish_id")
   @@index([orderId], map: "idx_order_id")
+  @@map("order_items")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model order_reviews {
-  id           Int                  @id @default(autoincrement())
-  orderId      Int                  @unique(map: "uk_order_id") @map("order_id")
-  userId       Int                  @map("user_id")
-  restaurantId Int                  @map("restaurant_id")
-  rating       Int                  @db.TinyInt
-  content      String?              @db.Text
-  images       Json?
-  replyContent String?              @map("reply_content") @db.Text
-  replyTime    DateTime?            @map("reply_time") @db.DateTime(0)
-  status       order_reviews_status @default(published)
-  createdAt    DateTime             @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt    DateTime             @default(now()) @map("updated_at") @db.DateTime(0)
-  deletedAt    DateTime?            @map("deleted_at") @db.DateTime(0)
-  orders       orders               @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "order_reviews_ibfk_1")
-  users        users                @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "order_reviews_ibfk_2")
-  restaurants  restaurants          @relation(fields: [restaurantId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "order_reviews_ibfk_3")
+model OrderReviews {
+  id            Int                  @id @default(autoincrement())
+  orderId Int                  @unique(map: "uk_order_id") @map("order_id")
+  userId Int @map("user_id")
+  restaurantId Int @map("restaurant_id")
+  rating        Int                  @db.TinyInt
+  content       String?              @db.Text
+  images        Json?
+  replyContent String?              @db.Text @map("reply_content")
+  replyTime DateTime?            @db.DateTime(0) @map("reply_time")
+  status        order_reviews_status @default(published)
+  createdAt DateTime             @default(now()) @db.DateTime(0) @map("created_at")
+  updatedAt DateTime             @default(now()) @db.DateTime(0) @map("updated_at")
+  deletedAt DateTime?            @db.DateTime(0) @map("deleted_at")
 
   @@index([deletedAt], map: "idx_deleted_at")
   @@index([rating], map: "idx_rating")
   @@index([restaurantId], map: "idx_restaurant_id")
   @@index([status], map: "idx_status")
-  @@index([userId], map: "user_id")
+  @@map("order_reviews")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model order_status_logs {
-  id           Int                              @id @default(autoincrement())
-  orderId      Int                              @map("order_id")
-  oldStatus    String?                          @map("old_status") @db.VarChar(20)
-  newStatus    String                           @map("new_status") @db.VarChar(20)
-  operatorId   Int?                             @map("operator_id")
+model OrderStatusLogs {
+  id            Int                              @id @default(autoincrement())
+  orderId Int @map("order_id")
+  oldStatus String?                          @db.VarChar(20) @map("old_status")
+  newStatus String                           @db.VarChar(20) @map("new_status")
+  operatorId Int? @map("operator_id")
   operatorType order_status_logs_operator_type? @default(system) @map("operator_type")
-  remark       String?                          @db.VarChar(255)
-  createdAt    DateTime                         @default(now()) @map("created_at") @db.DateTime(0)
-  orders       orders                           @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "order_status_logs_ibfk_1")
-  users        users?                           @relation(fields: [operatorId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "order_status_logs_ibfk_2")
+  remark        String?                          @db.VarChar(255)
+  createdAt DateTime                         @default(now()) @db.DateTime(0) @map("created_at")
 
   @@index([createdAt], map: "idx_created_at")
   @@index([orderId], map: "idx_order_id")
-  @@index([operatorId], map: "operator_id")
+  @@map("order_status_logs")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model orders {
-  id                    Int                    @id @default(autoincrement())
-  orderNumber           String                 @unique(map: "order_number") @map("order_number") @db.VarChar(32)
-  userId                Int                    @map("user_id")
-  restaurantId          Int                    @map("restaurant_id")
-  addressId             Int                    @map("address_id")
-  contactName           String                 @map("contact_name") @db.VarChar(50)
-  contactPhone          String                 @map("contact_phone") @db.VarChar(20)
-  deliveryAddress       String                 @map("delivery_address") @db.VarChar(255)
-  orderStatus           orders_order_status    @default(created) @map("order_status")
-  paymentStatus         orders_payment_status  @default(pending) @map("payment_status")
-  paymentMethod         orders_payment_method? @map("payment_method")
-  subtotal              Decimal                @default(0.00) @db.Decimal(10, 2)
-  deliveryFee           Decimal                @default(0.00) @map("delivery_fee") @db.Decimal(10, 2)
-  discountAmount        Decimal                @default(0.00) @map("discount_amount") @db.Decimal(10, 2)
-  totalAmount           Decimal                @default(0.00) @map("total_amount") @db.Decimal(10, 2)
-  couponId              Int?                   @map("coupon_id")
-  orderNote             String?                @map("order_note") @db.Text
-  deliveryTime          String?                @map("delivery_time") @db.VarChar(100)
-  estimatedDeliveryTime DateTime?              @map("estimated_delivery_time") @db.DateTime(0)
-  actualDeliveryTime    DateTime?              @map("actual_delivery_time") @db.DateTime(0)
-  createdAt             DateTime               @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt             DateTime               @default(now()) @map("updated_at") @db.DateTime(0)
-  paidAt                DateTime?              @map("paid_at") @db.DateTime(0)
-  completedAt           DateTime?              @map("completed_at") @db.DateTime(0)
-  cancelledAt           DateTime?              @map("cancelled_at") @db.DateTime(0)
-  cancelReason          String?                @map("cancel_reason") @db.VarChar(255)
-  deletedAt             DateTime?              @map("deleted_at") @db.DateTime(0)
-  deliveryInfo          delivery_info?
-  orderItems            order_items[]
-  orderReviews          order_reviews?
-  orderStatusLogs       order_status_logs[]
-  users                 users                  @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "orders_ibfk_1")
-  restaurants           restaurants            @relation(fields: [restaurantId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "orders_ibfk_2")
-  userAddresses         user_addresses         @relation(fields: [addressId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "orders_ibfk_3")
-  coupons               coupons?               @relation(fields: [couponId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "orders_ibfk_4")
-  paymentRecords        payment_records[]
-  refundRecords         refund_records[]
-  userCoupons           user_coupons[]
+model Orders {
+  id                      Int                    @id @default(autoincrement())
+  orderNumber String                 @unique(map: "order_number") @db.VarChar(32) @map("order_number")
+  userId Int @map("user_id")
+  restaurantId Int @map("restaurant_id")
+  addressId Int @map("address_id")
+  contactName String                 @db.VarChar(50) @map("contact_name")
+  contactPhone String                 @db.VarChar(20) @map("contact_phone")
+  deliveryAddress String                 @db.VarChar(255) @map("delivery_address")
+  orderStatus orders_order_status    @default(created) @map("order_status")
+  paymentStatus orders_payment_status  @default(pending) @map("payment_status")
+  paymentMethod orders_payment_method? @map("payment_method")
+  subtotal                Decimal                @default(0.00) @db.Decimal(10, 2)
+  deliveryFee Decimal                @default(0.00) @db.Decimal(10, 2) @map("delivery_fee")
+  discountAmount Decimal                @default(0.00) @db.Decimal(10, 2) @map("discount_amount")
+  totalAmount Decimal                @default(0.00) @db.Decimal(10, 2) @map("total_amount")
+  couponId Int? @map("coupon_id")
+  orderNote String?                @db.Text @map("order_note")
+  deliveryTime String?                @db.VarChar(100) @map("delivery_time")
+  estimatedDeliveryTime DateTime?              @db.DateTime(0) @map("estimated_delivery_time")
+  actualDeliveryTime DateTime?              @db.DateTime(0) @map("actual_delivery_time")
+  createdAt DateTime               @default(now()) @db.DateTime(0) @map("created_at")
+  updatedAt DateTime               @default(now()) @db.DateTime(0) @map("updated_at")
+  paidAt DateTime?              @db.DateTime(0) @map("paid_at")
+  completedAt DateTime?              @db.DateTime(0) @map("completed_at")
+  cancelledAt DateTime?              @db.DateTime(0) @map("cancelled_at")
+  cancelReason String?                @db.VarChar(255) @map("cancel_reason")
+  deletedAt DateTime?              @db.DateTime(0) @map("deleted_at")
 
-  @@index([addressId], map: "address_id")
-  @@index([couponId], map: "coupon_id")
   @@index([createdAt], map: "idx_created_at")
   @@index([deletedAt], map: "idx_deleted_at")
   @@index([orderNumber], map: "idx_order_number")
@@ -238,193 +184,190 @@ model orders {
   @@index([paymentStatus], map: "idx_payment_status")
   @@index([restaurantId], map: "idx_restaurant_id")
   @@index([userId], map: "idx_user_id")
+  @@map("orders")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model payment_records {
-  id            Int                            @id @default(autoincrement())
-  orderId       Int                            @map("order_id")
-  userId        Int                            @map("user_id")
+model PaymentRecords {
+  id             Int                            @id @default(autoincrement())
+  orderId Int @map("order_id")
+  userId Int @map("user_id")
   paymentMethod payment_records_payment_method @map("payment_method")
-  paymentAmount Decimal                        @map("payment_amount") @db.Decimal(10, 2)
-  transactionId String?                        @map("transaction_id") @db.VarChar(100)
+  paymentAmount Decimal                        @db.Decimal(10, 2) @map("payment_amount")
+  transactionId String?                        @db.VarChar(100) @map("transaction_id")
   paymentStatus payment_records_payment_status @default(pending) @map("payment_status")
-  paymentTime   DateTime?                      @map("payment_time") @db.DateTime(0)
-  failureReason String?                        @map("failure_reason") @db.VarChar(255)
-  createdAt     DateTime                       @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt     DateTime                       @default(now()) @map("updated_at") @db.DateTime(0)
-  orders        orders                         @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "payment_records_ibfk_1")
-  users         users                          @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "payment_records_ibfk_2")
-  refundRecords refund_records[]
+  paymentTime DateTime?                      @db.DateTime(0) @map("payment_time")
+  failureReason String?                        @db.VarChar(255) @map("failure_reason")
+  createdAt DateTime                       @default(now()) @db.DateTime(0) @map("created_at")
+  updatedAt DateTime                       @default(now()) @db.DateTime(0) @map("updated_at")
 
   @@index([orderId], map: "idx_order_id")
   @@index([paymentStatus], map: "idx_payment_status")
   @@index([transactionId], map: "idx_transaction_id")
   @@index([userId], map: "idx_user_id")
+  @@map("payment_records")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model refund_records {
-  id                                   Int                            @id @default(autoincrement())
-  orderId                              Int                            @map("order_id")
-  userId                               Int                            @map("user_id")
-  paymentRecordId                      Int                            @map("payment_record_id")
-  refundAmount                         Decimal                        @map("refund_amount") @db.Decimal(10, 2)
-  refundReason                         String                         @map("refund_reason") @db.VarChar(255)
-  refundType                           refund_records_refund_type     @default(full) @map("refund_type")
-  refundStatus                         refund_records_refund_status   @default(pending) @map("refund_status")
-  refundMethod                         refund_records_refund_method?  @default(original) @map("refund_method")
-  refundTransactionId                  String?                        @map("refund_transaction_id") @db.VarChar(100)
-  processorId                          Int?                           @map("processor_id")
-  processorType                        refund_records_processor_type? @default(system) @map("processor_type")
-  processRemark                        String?                        @map("process_remark") @db.VarChar(255)
-  processedAt                          DateTime?                      @map("processed_at") @db.DateTime(0)
-  completedAt                          DateTime?                      @map("completed_at") @db.DateTime(0)
-  createdAt                            DateTime                       @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt                            DateTime                       @default(now()) @map("updated_at") @db.DateTime(0)
-  orders                               orders                         @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "refund_records_ibfk_1")
-  usersRefundRecordsUserIdTousers      users                          @relation("refund_records_user_idTousers", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "refund_records_ibfk_2")
-  paymentRecords                       payment_records                @relation(fields: [paymentRecordId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "refund_records_ibfk_3")
-  usersRefundRecordsProcessorIdTousers users?                         @relation("refund_records_processor_idTousers", fields: [processorId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "refund_records_ibfk_4")
+model RefundRecords {
+  id                    Int                            @id @default(autoincrement())
+  orderId Int @map("order_id")
+  userId Int @map("user_id")
+  paymentRecordId Int @map("payment_record_id")
+  refundAmount Decimal                        @db.Decimal(10, 2) @map("refund_amount")
+  refundReason String                         @db.VarChar(255) @map("refund_reason")
+  refundType refund_records_refund_type     @default(full) @map("refund_type")
+  refundStatus refund_records_refund_status   @default(pending) @map("refund_status")
+  refundMethod refund_records_refund_method?  @default(original) @map("refund_method")
+  refundTransactionId String?                        @db.VarChar(100) @map("refund_transaction_id")
+  processorId Int? @map("processor_id")
+  processorType refund_records_processor_type? @default(system) @map("processor_type")
+  processRemark String?                        @db.VarChar(255) @map("process_remark")
+  processedAt DateTime?                      @db.DateTime(0) @map("processed_at")
+  completedAt DateTime?                      @db.DateTime(0) @map("completed_at")
+  createdAt DateTime                       @default(now()) @db.DateTime(0) @map("created_at")
+  updatedAt DateTime                       @default(now()) @db.DateTime(0) @map("updated_at")
 
   @@index([createdAt], map: "idx_created_at")
   @@index([orderId], map: "idx_order_id")
   @@index([refundStatus], map: "idx_refund_status")
   @@index([userId], map: "idx_user_id")
-  @@index([paymentRecordId], map: "payment_record_id")
-  @@index([processorId], map: "processor_id")
+  @@map("refund_records")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model restaurant_tag_master {
-  id                     Int                             @id @default(autoincrement())
-  tagName                String                          @unique(map: "tag_name") @map("tag_name") @db.VarChar(50)
-  tagType                restaurant_tag_master_tag_type? @default(cuisine) @map("tag_type")
-  color                  String?                         @default("#ff6b6b") @db.VarChar(7)
-  icon                   String?                         @db.VarChar(100)
-  sortOrder              Int                             @default(0) @map("sort_order")
-  status                 Int                             @default(1) @db.TinyInt
-  createdAt              DateTime                        @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt              DateTime                        @default(now()) @map("updated_at") @db.DateTime(0)
-  restaurantTagRelations restaurant_tag_relations[]
-  restaurantTagStats     restaurant_tag_stats?
+model RestaurantTagMaster {
+  id         Int                             @id @default(autoincrement())
+  tagName String                          @unique(map: "tag_name") @db.VarChar(50) @map("tag_name")
+  tagType restaurant_tag_master_tag_type? @default(cuisine) @map("tag_type")
+  color      String?                         @default("#ff6b6b") @db.VarChar(7)
+  icon       String?                         @db.VarChar(100)
+  sortOrder Int                             @default(0) @map("sort_order")
+  status     Boolean                         @default(true)
+  createdAt DateTime                        @default(now()) @db.DateTime(0) @map("created_at")
+  updatedAt DateTime                        @default(now()) @db.DateTime(0) @map("updated_at")
 
   @@index([sortOrder], map: "idx_sort_order")
   @@index([status], map: "idx_status")
   @@index([tagType], map: "idx_tag_type")
+  @@map("restaurant_tag_master")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model restaurant_tag_relations {
-  id                  Int                   @id @default(autoincrement())
-  restaurantId        Int                   @map("restaurant_id")
-  tagId               Int                   @map("tag_id")
-  createdAt           DateTime              @default(now()) @map("created_at") @db.DateTime(0)
-  createdBy           Int?                  @map("created_by")
-  restaurants         restaurants           @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "restaurant_tag_relations_ibfk_1")
-  restaurantTagMaster restaurant_tag_master @relation(fields: [tagId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "restaurant_tag_relations_ibfk_2")
-  users               users?                @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "restaurant_tag_relations_ibfk_3")
+model RestaurantTagRelations {
+  id            Int      @id @default(autoincrement())
+  restaurantId Int @map("restaurant_id")
+  tagId Int @map("tag_id")
+  createdAt DateTime @default(now()) @db.DateTime(0) @map("created_at")
+  createdBy Int? @map("created_by")
 
   @@unique([restaurantId, tagId], map: "uk_restaurant_tag")
-  @@index([createdBy], map: "created_by")
   @@index([restaurantId], map: "idx_restaurant_id")
   @@index([tagId], map: "idx_tag_id")
+  @@map("restaurant_tag_relations")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model restaurant_tag_stats {
-  tagId               Int                   @id @map("tag_id")
-  usageCount          Int                   @default(0) @map("usage_count")
-  lastUsedAt          DateTime?             @map("last_used_at") @db.DateTime(0)
-  restaurantTagMaster restaurant_tag_master @relation(fields: [tagId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "restaurant_tag_stats_ibfk_1")
+model RestaurantTagStats {
+  tagId Int       @id @map("tag_id")
+  usageCount Int       @default(0) @map("usage_count")
+  lastUsedAt DateTime? @db.DateTime(0) @map("last_used_at")
+  @@map("restaurant_tag_stats")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model restaurants {
-  id                     Int                        @id @default(autoincrement())
-  name                   String                     @db.VarChar(100)
-  image                  String                     @db.VarChar(255)
-  rating                 Decimal                    @default(0.0) @db.Decimal(2, 1)
-  distance               Decimal                    @default(0.00) @db.Decimal(4, 2)
-  deliveryFee            Decimal                    @default(0.00) @map("delivery_fee") @db.Decimal(5, 2)
-  deliveryTime           Int                        @default(0) @map("delivery_time")
-  status                 Int                        @default(1) @db.TinyInt
-  createdAt              DateTime                   @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt              DateTime                   @default(now()) @map("updated_at") @db.DateTime(0)
-  deletedAt              DateTime?                  @map("deleted_at") @db.DateTime(0)
-  dishCategories         dish_categories[]
-  dishes                 dishes[]
-  orderReviews           order_reviews[]
-  orders                 orders[]
-  restaurantTagRelations restaurant_tag_relations[]
-  shoppingCart           shopping_cart[]
+model Restaurants {
+  id            Int       @id @default(autoincrement())
+  name          String    @db.VarChar(100)
+  image         String    @db.VarChar(255)
+  rating        Decimal   @default(0.0) @db.Decimal(2, 1)
+  distance      Decimal   @default(0.00) @db.Decimal(4, 2)
+  deliveryFee Decimal   @default(0.00) @db.Decimal(5, 2) @map("delivery_fee")
+  deliveryTime Int       @default(0) @map("delivery_time")
+  status        Boolean   @default(true)
+  createdAt DateTime  @default(now()) @db.DateTime(0) @map("created_at")
+  updatedAt DateTime  @default(now()) @db.DateTime(0) @map("updated_at")
+  deletedAt DateTime? @db.DateTime(0) @map("deleted_at")
 
   @@index([deletedAt], map: "idx_deleted_at")
   @@index([distance], map: "idx_distance")
   @@index([rating], map: "idx_rating")
   @@index([status], map: "idx_status")
+  @@map("restaurants")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model shopping_cart {
-  id           Int         @id @default(autoincrement())
-  userId       Int         @map("user_id")
-  restaurantId Int         @map("restaurant_id")
-  dishId       Int         @map("dish_id")
-  quantity     Int         @default(1)
-  price        Decimal     @db.Decimal(8, 2)
-  createdAt    DateTime    @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt    DateTime    @default(now()) @map("updated_at") @db.DateTime(0)
-  users        users       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "shopping_cart_ibfk_1")
-  restaurants  restaurants @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "shopping_cart_ibfk_2")
-  dishes       dishes      @relation(fields: [dishId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "shopping_cart_ibfk_3")
+model ShoppingCart {
+  id            Int      @id @default(autoincrement())
+  userId Int @map("user_id")
+  restaurantId Int @map("restaurant_id")
+  dishId Int @map("dish_id")
+  quantity      Int      @default(1)
+  price         Decimal  @db.Decimal(8, 2)
+  createdAt DateTime @default(now()) @db.DateTime(0) @map("created_at")
+  updatedAt DateTime @default(now()) @db.DateTime(0) @map("updated_at")
 
   @@unique([userId, restaurantId, dishId], map: "uk_user_restaurant_dish")
-  @@index([dishId], map: "dish_id")
   @@index([restaurantId], map: "idx_restaurant_id")
   @@index([userId], map: "idx_user_id")
+  @@map("shopping_cart")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model user_addresses {
-  id            Int      @id @default(autoincrement())
-  userId        Int      @map("user_id")
-  contactName   String   @map("contact_name") @db.VarChar(50)
-  contactPhone  String   @map("contact_phone") @db.VarChar(20)
-  province      String   @db.VarChar(50)
-  city          String   @db.VarChar(50)
-  district      String   @db.VarChar(50)
-  detailAddress String   @map("detail_address") @db.VarChar(255)
-  isDefault     Int      @default(0) @map("is_default") @db.TinyInt
-  createdAt     DateTime @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt     DateTime @default(now()) @map("updated_at") @db.DateTime(0)
-  orders        orders[]
-  users         users    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_addresses_ibfk_1")
+model UserAddresses {
+  id             Int      @id @default(autoincrement())
+  userId Int @map("user_id")
+  contactName String   @db.VarChar(50) @map("contact_name")
+  contactPhone String   @db.VarChar(20) @map("contact_phone")
+  province       String   @db.VarChar(50)
+  city           String   @db.VarChar(50)
+  district       String   @db.VarChar(50)
+  detailAddress String   @db.VarChar(255) @map("detail_address")
+  isDefault Boolean  @default(false) @map("is_default")
+  createdAt DateTime @default(now()) @db.DateTime(0) @map("created_at")
+  updatedAt DateTime @default(now()) @db.DateTime(0) @map("updated_at")
 
   @@index([isDefault], map: "idx_is_default")
   @@index([userId], map: "idx_user_id")
+  @@map("user_addresses")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model user_coupons {
-  id         Int                 @id @default(autoincrement())
-  userId     Int                 @map("user_id")
-  couponId   Int                 @map("coupon_id")
-  orderId    Int?                @map("order_id")
-  status     user_coupons_status @default(unused)
-  receivedAt DateTime            @default(now()) @map("received_at") @db.DateTime(0)
-  usedAt     DateTime?           @map("used_at") @db.DateTime(0)
-  expiredAt  DateTime            @map("expired_at") @db.DateTime(0)
-  users      users               @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_coupons_ibfk_1")
-  coupons    coupons             @relation(fields: [couponId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_coupons_ibfk_2")
-  orders     orders?             @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_coupons_ibfk_3")
+model UserCoupons {
+  id          Int                 @id @default(autoincrement())
+  userId Int @map("user_id")
+  couponId Int @map("coupon_id")
+  orderId Int? @map("order_id")
+  status      user_coupons_status @default(unused)
+  receivedAt DateTime            @default(now()) @db.DateTime(0) @map("received_at")
+  usedAt DateTime?           @db.DateTime(0) @map("used_at")
+  expiredAt DateTime            @db.DateTime(0) @map("expired_at")
 
   @@unique([userId, couponId, receivedAt], map: "uk_user_coupon")
   @@index([couponId], map: "idx_coupon_id")
   @@index([expiredAt], map: "idx_expired_at")
   @@index([status], map: "idx_status")
   @@index([userId], map: "idx_user_id")
-  @@index([orderId], map: "order_id")
+  @@map("user_coupons")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model Users {
+  id         Int       @id @default(autoincrement())
+  username   String    @db.VarChar(50)
+  phone      String    @unique(map: "phone") @db.VarChar(20)
+  password   String    @db.VarChar(255)
+  avatar     String?   @db.VarChar(255)
+  status     Boolean   @default(true)
+  createdAt DateTime  @default(now()) @db.DateTime(0) @map("created_at")
+  updatedAt DateTime  @default(now()) @db.DateTime(0) @map("updated_at")
+  deletedAt DateTime? @db.DateTime(0) @map("deleted_at")
+
+  @@index([deletedAt], map: "idx_deleted_at")
+  @@index([phone], map: "idx_phone")
+  @@index([status], map: "idx_status")
+  @@index([username], map: "idx_username")
+  @@map("users")
 }
 
 enum coupons_coupon_type {

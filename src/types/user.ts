@@ -1,5 +1,4 @@
-// 用户相关类型定义
-import { users_status } from '@prisma/client';
+
 
 /**
  * 用户实体接口
@@ -9,24 +8,18 @@ export interface User {
   id: number;
   /** 用户名 */
   username: string;
-  /** 用户邮箱 */
-  email: string;
+  //密码
+  password?: string;
   /** 手机号码，可选 */
-  phone?: string | null;
-  /** 用户昵称 */
-  nickname: string | null;
+  phone: string | null;
   /** 用户头像URL，可选 */
   avatar?: string | null;
   /** 用户状态 */
-  status: users_status;
-  /** 最后登录时间，可选 */
-  lastLoginAt?: Date | null;
-  /** 最后登录IP地址，可选 */
-  lastLoginIp?: string | null;
+  status: boolean;
   /** 创建时间 */
-  createdAt: Date;
+  createdAt?: Date;
   /** 更新时间 */
-  updatedAt: Date;
+  updatedAt?: Date;
   /** 软删除时间 */
   deletedAt?: Date | null;
 }
@@ -35,20 +28,12 @@ export interface User {
  * 创建用户请求参数接口
  */
 export interface CreateUserInput {
-  /** 用户名 */
-  username: string;
   /** 用户密码 */
   password: string;
-  /** 用户邮箱，可选 */
-  email?: string;
-  /** 手机号码，可选 */
-  phone?: string;
-  /** 用户昵称，可选 */
-  nickname?: string;
-  /** 用户头像URL，可选 */
-  avatar?: string;
-  /** 用户状态，可选 */
-  status?: users_status;
+  /** 手机号码 */
+  phone: string;
+  /** 验证码 */
+  authCode: string;
 }
 
 /**
@@ -69,16 +54,12 @@ export interface UpdateUserInput {
  * 用户登录请求参数接口
  */
 export interface UserLoginInput {
-  /** 用户名 */
-  username: string;
   /** 用户密码 */
-  password: string;
-  /** 用户邮箱，可选 */
-  email?: string;
+  password?: string;
   /** 手机号码，可选 */
-  phone?: string;
-//登陆ip
-  loginIp?:string;
+  phone: string;
+//登陆码
+  authCode?:string;
 }
 
 /**
@@ -95,8 +76,8 @@ export interface ChangePasswordInput {
  * 重置密码请求参数接口
  */
 export interface ResetPasswordInput {
-  /** 用户邮箱 */
-  email: string;
+  /** 用户手机号 */
+  phone: string;
   /** 验证码 */
   code: string;
   /** 新密码 */
@@ -142,7 +123,7 @@ export interface CreateAddressInput {
   /** 所属用户ID */
   userId: number;
   /** 收件人姓名 */
-  recipient: string;
+  contactName: string;
   /** 收件人手机号码 */
   phone: string;
   /** 省份 */
@@ -152,9 +133,7 @@ export interface CreateAddressInput {
   /** 区县 */
   district: string;
   /** 详细地址 */
-  detailedAddress: string;
-  /** 邮政编码，可选 */
-  postalCode?: string;
+  detailAddress: string;
   /** 是否设为默认地址，可选 */
   isDefault?: boolean;
 }

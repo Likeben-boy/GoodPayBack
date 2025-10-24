@@ -24,7 +24,7 @@ const router: Router = Router();
 router.post('/register',
   (req, res, next) => {
     businessLogger.info('User registration attempt', {
-      email: req.body.email,
+      phone: req.body.phone,
       ip: req.ip,
       userAgent: req.get('User-Agent')
     });

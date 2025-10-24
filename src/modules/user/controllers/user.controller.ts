@@ -12,7 +12,7 @@ class UserController {
   async register(req: Request, res: Response): Promise<void> {
     try {
       businessLogger.info('用户开始注册', {
-        email: req.body.email,
+        phone: req.body.phone,
         ip: req.ip,
         userAgent: req.get('User-Agent')
       });
@@ -21,7 +21,7 @@ class UserController {
 
       businessLogger.info('User registration successful', {
         userId: result.user?.id,
-        email: req.body.email,
+        phone: req.body.phone,
         ip: req.ip
       });
 
@@ -30,7 +30,7 @@ class UserController {
       logger.error('User registration failed', {
         error: error.message,
         stack: error.stack,
-        email: req.body.email,
+        phone: req.body.phone,
         ip: req.ip,
         code: error.code || 'VALIDATION_ERROR'
       });
@@ -46,19 +46,15 @@ class UserController {
   async login(req: Request, res: Response): Promise<void> {
     try {
       businessLogger.debug('User login processing', {
-        email: req.body.email,
-        ip: req.ip,
+        phone: req.body.phone,
         userAgent: req.get('User-Agent')
       });
-      //添加ip传递
-      req.body.loginIp = req.ip;
 
       const result = await userService.login(req.body);
 
       businessLogger.info('User login successful', {
         userId: result.user?.id,
-        email: req.body.email,
-        ip: req.ip
+        phone: req.body.phone,
       });
 
       successResponse(res, '登录成功', result);
@@ -66,8 +62,7 @@ class UserController {
       logger.error('User login failed', {
         error: error.message,
         stack: error.stack,
-        email: req.body.email,
-        ip: req.ip,
+        phone: req.body.phone,
         code: error.code || 'VALIDATION_ERROR'
       });
       errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
