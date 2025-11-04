@@ -24,7 +24,7 @@ class AddressModel {
       data: {
         userId,
         contactName: addressData.contactName,
-        contactPhone: addressData.phone,
+        contactPhone: addressData.contactPhone,
         province: addressData.province,
         city: addressData.city,
         district: addressData.district,

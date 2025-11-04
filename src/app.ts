@@ -42,7 +42,6 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // 请求入口日志中间件
 app.use((req: Request, res: Response, next: NextFunction) => {
-  
   businessLogger.info('请求地址：', {
     method: req.method,
     url: req.url,
@@ -72,6 +71,61 @@ app.get('/health', (req: Request, res: Response) => {
   res.status(200).json(response);
 });
 
+// 返回体内容日志中间件
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const startTime = Date.now();
+  let responseData: any = null;
+
+  // 拦截 res.json 方法来捕获响应数据
+  const originalJson = res.json;
+  res.json = function(data: any) {
+    responseData = data;
+    return originalJson.call(this, data);
+  };
+
+  // 拦截 res.send 方法来捕获响应数据
+  const originalSend = res.send;
+  res.send = function(data: any) {
+    if (typeof data === 'object' || typeof data === 'string') {
+      responseData = data;
+    }
+    return originalSend.call(this, data);
+  };
+
+  res.on('finish', () => {
+    const duration = Date.now() - startTime;
+    const statusColor = res.statusCode >= 400 ? 'ERROR' : res.statusCode >= 300 ? 'WARN' : 'SUCCESS';
+
+    const logData: any = {
+      method: req.method,
+      url: req.url,
+      statusCode: res.statusCode,
+      status: statusColor,
+      duration: `${duration}ms`,
+      ip: req.ip,
+      timestamp: new Date().toISOString()
+    };
+
+    // 添加响应数据到日志中
+    if (responseData) {
+      // 如果responseData是JSON字符串，转换为对象
+      if (typeof responseData === 'string') {
+        try {
+          logData.responseData = JSON.parse(responseData);
+        } catch (e) {
+          logData.responseData = responseData; // 如果解析失败，保持原样
+        }
+      } else {
+        logData.responseData = responseData;
+      }
+    }
+
+    businessLogger.info(`[${req.method}] ${req.url} - 响应完成`, logData);
+  });
+
+  next();
+});
+
 // API路由
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/restaurants', restaurantRoutes);
@@ -79,6 +133,8 @@ app.use('/api/v1/restaurants', restaurantRoutes);
 // app.use('/api/v1/cart', authMiddleware, cartRoutes);
 // app.use('/api/v1/orders', authMiddleware, orderRoutes);
 // app.use('/api/v1/payments', authMiddleware, paymentRoutes);
+
+
 
 // 404处理
 app.use(notFoundHandler);

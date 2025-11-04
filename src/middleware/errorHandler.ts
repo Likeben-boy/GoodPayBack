@@ -24,6 +24,8 @@ export class AppError extends Error {
  */
 const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction): void => {
   // 增强的错误日志记录
+  console.log('youmeiyoudayin');
+  
   const errorContext = {
     error: err.message,
     stack: err.stack,
@@ -189,6 +191,8 @@ const errorHandler = (err: Error, req: Request, res: Response, next: NextFunctio
  * 404错误处理中间件
  */
 const notFoundHandler = (req: Request, res: Response): void => {
+  console.log(111111);
+  
   // 记录404错误日志
   businessLogger.warn('Route not found', {
     url: req.url,

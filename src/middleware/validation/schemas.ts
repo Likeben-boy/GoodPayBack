@@ -32,7 +32,7 @@ export const userValidation = {
       .notEmpty()
       .withMessage("请输入手机号码")
       .matches(/^1[3-9]\d{9}$/)
-      .withMessage("请输入有效的手机号码")
+      .withMessage("请输入有效的手机号码"),
   ],
 
   updateProfile: [
@@ -72,24 +72,25 @@ export const userValidation = {
   ],
 
   createAddress: [
-    body("recipient")
+    body("contactName")
       .trim()
+      .notEmpty()
       .isLength({ min: 2, max: 20 })
       .withMessage("收件人姓名长度必须在2-20个字符之间"),
-    body("phone")
+    body("contactPhone")
+      .trim()
+      .notEmpty()
       .matches(/^1[3-9]\d{9}$/)
       .withMessage("请输入有效的手机号码"),
     body("province").trim().notEmpty().withMessage("请选择省份"),
     body("city").trim().notEmpty().withMessage("请选择城市"),
     body("district").trim().notEmpty().withMessage("请选择区县"),
-    body("detailedAddress")
+    body("detailAddress")
+      .trim()
+      .notEmpty()
       .trim()
       .isLength({ min: 5, max: 100 })
       .withMessage("详细地址长度必须在5-100个字符之间"),
-    body("postalCode")
-      .optional()
-      .matches(/^\d{6}$/)
-      .withMessage("邮政编码必须是6位数字"),
     body("isDefault")
       .optional()
       .isBoolean()
@@ -97,27 +98,23 @@ export const userValidation = {
   ],
 
   updateAddress: [
-    body("recipient")
+    body("contactName")
       .optional()
       .trim()
       .isLength({ min: 2, max: 20 })
       .withMessage("收件人姓名长度必须在2-20个字符之间"),
-    body("phone")
+    body("contactPhone")
       .optional()
       .matches(/^1[3-9]\d{9}$/)
       .withMessage("请输入有效的手机号码"),
     body("province").optional().trim().notEmpty().withMessage("请选择省份"),
     body("city").optional().trim().notEmpty().withMessage("请选择城市"),
     body("district").optional().trim().notEmpty().withMessage("请选择区县"),
-    body("detailedAddress")
+    body("detailAddress")
       .optional()
       .trim()
       .isLength({ min: 5, max: 100 })
       .withMessage("详细地址长度必须在5-100个字符之间"),
-    body("postalCode")
-      .optional()
-      .matches(/^\d{6}$/)
-      .withMessage("邮政编码必须是6位数字"),
     body("isDefault")
       .optional()
       .isBoolean()

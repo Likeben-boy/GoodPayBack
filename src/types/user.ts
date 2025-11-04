@@ -125,7 +125,7 @@ export interface CreateAddressInput {
   /** 收件人姓名 */
   contactName: string;
   /** 收件人手机号码 */
-  phone: string;
+  contactPhone: string;
   /** 省份 */
   province: string;
   /** 城市 */
