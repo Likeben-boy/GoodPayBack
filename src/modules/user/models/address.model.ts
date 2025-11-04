@@ -1,50 +1,39 @@
-import { prisma, executeTransaction } from '../../../database/prisma';
-import { Address, CreateAddressInput, UpdateAddressInput } from '../../../types/user';
+import { prisma } from '../../../database/prisma';
+import { CreateAddressInput, UpdateAddressInput } from '../../../types/user';
 
 class AddressModel {
   /**
    * 创建地址
+   * @param userId - 用户ID
    * @param addressData - 地址数据
-   * @returns 地址ID
+   * @returns 创建的地址
    */
-  async create(addressData: CreateAddressInput): Promise<number> {
-    const address = await prisma.addresses.create({
+  async createAddress(userId: number, addressData: CreateAddressInput): Promise<any> {
+    // 如果设置为默认地址，需要先取消其他默认地址（只影响未删除的地址）
+    if (addressData.isDefault) {
+      await prisma.userAddresses.updateMany({
+        where: {
+          userId,
+          deleteAt: null,
+        } as any,
+        data: { isDefault: false },
+      });
+    }
+
+    const address = await prisma.userAddresses.create({
       data: {
-        userId: addressData.userId,
-        recipient: addressData.recipient,
-        phone: addressData.phone,
+        userId,
+        contactName: addressData.contactName,
+        contactPhone: addressData.phone,
         province: addressData.province,
         city: addressData.city,
         district: addressData.district,
-        detailedAddress: addressData.detailedAddress,
-        postalCode: addressData.postalCode || null,
-        isDefault: addressData.isDefault || false
-      }
-    });
-    return address.id;
-  }
-
-  /**
-   * 根据ID查询地址
-   * @param id - 地址ID
-   * @returns 地址信息
-   */
-  async findById(id: number): Promise<Address | null> {
-    const address = await prisma.addresses.findFirst({
-      where: {
-        id,
-        deletedAt: null
-      }
+        detailAddress: addressData.detailAddress,
+        isDefault: addressData.isDefault || false,
+      },
     });
 
-    if (!address) return null;
-
-    return {
-      ...address,
-      isDefault: address.isDefault || false,
-      createdAt: address.createdAt,
-      updatedAt: address.updatedAt
-    };
+    return address;
   }
 
   /**
@@ -52,26 +41,14 @@ class AddressModel {
    * @param userId - 用户ID
    * @returns 地址列表
    */
-  async findByUserId(userId: number): Promise<Address[]> {
-    const addresses = await prisma.addresses.findMany({
+  async getUserAddresses(userId: number): Promise<any[]> {
+    return await prisma.userAddresses.findMany({
       where: {
         userId,
-        deletedAt: null
-      },
-      orderBy: [
-        { isDefault: 'desc' },
-        { createdAt: 'desc' }
-      ]
+        deleteAt: null, // 排除已删除的地址
+      } as any,
+      orderBy: { createdAt: "desc" },
     });
-
-    return addresses.map(address => ({
-      ...address,
-      isDefault: address.isDefault || false,
-      postalCode: address.postalCode || undefined,
-      createdAt: address.createdAt,
-      updatedAt: address.updatedAt,
-      deletedAt: address.deletedAt
-    }));
   }
 
   /**
@@ -79,136 +56,127 @@ class AddressModel {
    * @param userId - 用户ID
    * @returns 默认地址
    */
-  async findDefaultByUserId(userId: number): Promise<Address | null> {
-    const address = await prisma.addresses.findFirst({
+  async getDefaultAddress(userId: number): Promise<any | null> {
+    return await prisma.userAddresses.findFirst({
       where: {
         userId,
         isDefault: true,
-        deletedAt: null
-      }
+        deleteAt: null, // 排除已删除的地址
+      } as any,
+    });
+  }
+
+  /**
+   * 根据ID查询地址
+   * @param addressId - 地址ID
+   * @param userId - 用户ID
+   * @returns 地址信息
+   */
+  async findByIdAndUserId(addressId: number, userId: number): Promise<any | null> {
+    const address = await prisma.userAddresses.findFirst({
+      where: {
+        id: addressId,
+        userId,
+        deleteAt: null, // 排除已删除的地址
+      } as any,
     });
 
     if (!address) return null;
-
-    return {
-      ...address,
-      isDefault: address.isDefault || false,
-      createdAt: address.createdAt,
-      updatedAt: address.updatedAt
-    };
+    return address;
   }
 
   /**
    * 更新地址信息
-   * @param id - 地址ID
-   * @param addressData - 更新数据
-   * @returns 影响行数
+   * @param addressId - 地址ID
+   * @param userId - 用户ID
+   * @param updateData - 更新数据
+   * @returns 更新后的地址
    */
-  async update(id: number, addressData: UpdateAddressInput): Promise<number> {
-    const result = await prisma.addresses.updateMany({
-      where: {
-        id,
-        deletedAt: null
-      },
-      data: addressData
+  async updateAddress(addressId: number, userId: number, updateData: UpdateAddressInput): Promise<any> {
+    const address = await this.findByIdAndUserId(addressId, userId);
+
+    if (!address) {
+      throw { message: "地址不存在", code: "ADDRESS_NOT_FOUND" };
+    }
+
+    // 如果设置为默认地址，需要先取消其他默认地址
+    if (updateData.isDefault) {
+      await prisma.userAddresses.updateMany({
+        where: { userId },
+        data: { isDefault: false },
+      });
+    }
+
+    const updatedAddress = await prisma.userAddresses.update({
+      where: { id: addressId },
+      data: updateData,
     });
-    return result.count;
+
+    return updatedAddress;
   }
 
   /**
    * 设置默认地址
    * @param userId - 用户ID
    * @param addressId - 地址ID
-   * @returns 影响行数
    */
-  async setDefault(userId: number, addressId: number): Promise<number> {
-    const result = await executeTransaction(async (tx) => {
-      // 取消所有默认地址
-      await tx.addresses.updateMany({
+  async setDefaultAddress(userId: number, addressId: number): Promise<void> {
+    const address = await this.findByIdAndUserId(addressId, userId);
+
+    if (!address) {
+      throw { message: "地址不存在", code: "ADDRESS_NOT_FOUND" };
+    }
+
+    // 使用事务来确保数据一致性
+    await prisma.$transaction([
+      // 取消所有默认地址（只影响未删除的地址）
+      prisma.userAddresses.updateMany({
         where: {
           userId,
-          deletedAt: null
-        },
-        data: {
-          isDefault: false
-        }
-      });
-
+          deleteAt: null,
+        } as any,
+        data: { isDefault: false },
+      }),
       // 设置新的默认地址
-      const updateResult = await tx.addresses.updateMany({
-        where: {
-          id: addressId,
-          userId,
-          deletedAt: null
-        },
-        data: {
-          isDefault: true
-        }
-      });
-
-      return updateResult.count;
-    });
-
-    return result;
+      prisma.userAddresses.update({
+        where: { id: addressId },
+        data: { isDefault: true },
+      }),
+    ]);
   }
 
   /**
    * 删除地址（软删除）
-   * @param id - 地址ID
-   * @returns 影响行数
+   * @param userId - 用户ID
+   * @param addressId - 地址ID
    */
-  async delete(id: number): Promise<number> {
-    const result = await prisma.addresses.updateMany({
-      where: {
-        id,
-        deletedAt: null
-      },
-      data: {
-        deletedAt: new Date()
-      }
+  async deleteAddress(userId: number, addressId: number): Promise<void> {
+    const address = await this.findByIdAndUserId(addressId, userId);
+
+    if (!address) {
+      throw { message: "地址不存在", code: "ADDRESS_NOT_FOUND" };
+    }
+
+    // 软删除：设置 deleteAt 字段
+    await prisma.userAddresses.update({
+      where: { id: addressId },
+      data: { deleteAt: new Date() } as any,
     });
-    return result.count;
   }
 
   /**
    * 批量删除地址（软删除）
    * @param userId - 用户ID
    * @param addressIds - 地址ID数组
-   * @returns 影响行数
    */
-  async batchDelete(userId: number, addressIds: number[]): Promise<number> {
-    const result = await prisma.addresses.updateMany({
+  async batchDeleteAddresses(userId: number, addressIds: number[]): Promise<void> {
+    await prisma.userAddresses.updateMany({
       where: {
+        id: { in: addressIds },
         userId,
-        id: {
-          in: addressIds
-        },
-        deletedAt: null
       },
-      data: {
-        deletedAt: new Date()
-      }
+      data: { deleteAt: new Date() } as any,
     });
-    return result.count;
-  }
-
-  /**
-   * 检查地址是否属于指定用户
-   * @param addressId - 地址ID
-   * @param userId - 用户ID
-   * @returns 是否属于用户
-   */
-  async belongsToUser(addressId: number, userId: number): Promise<boolean> {
-    const address = await prisma.addresses.findFirst({
-      where: {
-        id: addressId,
-        userId,
-        deletedAt: null
-      },
-      select: { id: true }
-    });
-
-    return !!address;
   }
 
   /**
@@ -217,78 +185,12 @@ class AddressModel {
    * @returns 地址数量
    */
   async countByUserId(userId: number): Promise<number> {
-    return await prisma.addresses.count({
+    return await prisma.userAddresses.count({
       where: {
         userId,
-        deletedAt: null
-      }
+        deleteAt: null, // 排除已删除的地址
+      } as any,
     });
-  }
-
-  /**
-   * 获取用户默认地址数量
-   * @param userId - 用户ID
-   * @returns 默认地址数量
-   */
-  async countDefaultByUserId(userId: number): Promise<number> {
-    return await prisma.addresses.count({
-      where: {
-        userId,
-        isDefault: true,
-        deletedAt: null
-      }
-    });
-  }
-
-  /**
-   * 分页查询用户地址
-   * @param userId - 用户ID
-   * @param options - 查询选项
-   * @returns 分页结果
-   */
-  async findWithPagination(userId: number, options: {
-    page?: number;
-    limit?: number;
-  } = {}) {
-    const { page = 1, limit = 10 } = options;
-    const skip = (page - 1) * limit;
-
-    const where = {
-      userId,
-      deletedAt: null
-    };
-
-    const [addresses, total] = await Promise.all([
-      prisma.addresses.findMany({
-        where,
-        orderBy: [
-          { isDefault: 'desc' },
-          { createdAt: 'desc' }
-        ],
-        skip,
-        take: limit
-      }),
-      prisma.addresses.count({ where })
-    ]);
-
-    const totalPages = Math.ceil(total / limit);
-
-    return {
-      items: addresses.map(address => ({
-        ...address,
-        isDefault: address.isDefault || false,
-        createdAt: address.createdAt,
-        updatedAt: address.updatedAt
-      })),
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1
-      }
-    };
   }
 }
 

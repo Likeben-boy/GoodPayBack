@@ -12,7 +12,7 @@ export interface ApiResponse<T = any> {
   /** 响应数据，可选 */
   data?: T;
   /** 业务错误码，可选 */
-  code?: string;
+  code: HttpCode;
   /** 响应时间戳（ISO格式） */
   timestamp: string;
   /** 验证错误列表，验证失败时使用 */
@@ -165,4 +165,27 @@ export interface AppConfig {
   logLevel: string;
   /** 日志文件路径 */
   logFile: string;
+}
+
+//返回错误码枚举
+export enum HttpCode{
+    SUCCESS = 'SUCCESS',
+
+    //校验错误
+    VALIDATION_ERROR ='VALIDATION_ERROR',
+
+    //内部错误
+    INTERNAL_ERROR = 'INTERNAL_ERROR',
+
+    //缺少权限头
+    MISSING_TOKEN = 'MISSING_TOKEN',
+
+    //无效token
+    INVALID_TOKEN = 'INVALID_TOKEN',
+
+    //过期token
+    TIME_OUT_TOKEN = 'TIME_OUT_TOKEN',
+
+    //认证失败
+    AUTH_FAILED = 'AUTH_FAILED',
 }

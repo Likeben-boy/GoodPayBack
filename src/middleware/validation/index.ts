@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { validationResult, ValidationChain } from 'express-validator';
-import { ApiResponse, ValidationError } from '../../types';
+import { ApiResponse, ValidationError,HttpCode } from '../../types';
 import logger, {  businessLogger } from '@/utils/logger';
 
 /**
@@ -42,7 +42,7 @@ const validate = (validations: ValidationChain[]) => {
     const response: ApiResponse = {
       status: 'error',
       message: '数据验证失败',
-      code: 'VALIDATION_ERROR',
+      code: HttpCode.VALIDATION_ERROR,
       errors: formattedErrors,
       timestamp: new Date().toISOString()
     };

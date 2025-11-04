@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import userService from '../services/user.service';
 import { successResponse, errorResponse } from '../../../utils/response';
 import logger, { businessLogger } from '../../../utils/logger';
+import {HttpCode} from '@/types/index';
 
 class UserController {
   /**
@@ -32,9 +33,9 @@ class UserController {
         stack: error.stack,
         phone: req.body.phone,
         ip: req.ip,
-        code: error.code || 'VALIDATION_ERROR'
+        code: HttpCode.INTERNAL_ERROR
       });
-      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
+      errorResponse(res, error.message, 400, HttpCode.INTERNAL_ERROR);
     }
   }
 
@@ -63,9 +64,9 @@ class UserController {
         error: error.message,
         stack: error.stack,
         phone: req.body.phone,
-        code: error.code || 'VALIDATION_ERROR'
+        code: HttpCode.INTERNAL_ERROR
       });
-      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
+      errorResponse(res, error.message, 400, HttpCode.INTERNAL_ERROR);
     }
   }
 
@@ -94,9 +95,10 @@ class UserController {
         error: error.message,
         stack: error.stack,
         userId: req.user?.userId,
-        ip: req.ip
+        ip: req.ip,
+        code: HttpCode.INTERNAL_ERROR
       });
-      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
+      errorResponse(res, error.message, 400, HttpCode.INTERNAL_ERROR);
     }
   }
 
@@ -110,7 +112,13 @@ class UserController {
       const result = await userService.refreshToken(req.body);
       successResponse(res, '令牌刷新成功', result);
     } catch (error: any) {
-      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
+      logger.error('刷新令牌访问失败', {
+        error: error.message,
+        stack: error.stack,
+        ip: req.ip,
+        code: HttpCode.INTERNAL_ERROR
+      });
+      errorResponse(res, error.message, 400, HttpCode.INTERNAL_ERROR);
     }
   }
 
@@ -124,7 +132,14 @@ class UserController {
       const result = await userService.getUserProfile(req.user!.userId);
       successResponse(res, '获取用户信息成功', result);
     } catch (error: any) {
-      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
+      logger.error('获取用户信息失败', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.user?.userId,
+        ip: req.ip,
+        code: HttpCode.INTERNAL_ERROR
+      });
+      errorResponse(res, error.message, 400, HttpCode.INTERNAL_ERROR);
     }
   }
 
@@ -138,7 +153,14 @@ class UserController {
       const result = await userService.updateProfile(req.user!.userId, req.body);
       successResponse(res, '更新用户信息成功', result);
     } catch (error: any) {
-      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
+      logger.error('更新用户信息失败', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.user?.userId,
+        ip: req.ip,
+        code: HttpCode.INTERNAL_ERROR
+      });
+      errorResponse(res, error.message, 400, HttpCode.INTERNAL_ERROR);
     }
   }
 
@@ -152,7 +174,14 @@ class UserController {
       await userService.changePassword(req.user!.userId, req.body);
       successResponse(res, '密码修改成功');
     } catch (error: any) {
-      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
+      logger.error('密码修改失败', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.user?.userId,
+        ip: req.ip,
+        code: HttpCode.INTERNAL_ERROR
+      });
+      errorResponse(res, error.message, 400, HttpCode.INTERNAL_ERROR);
     }
   }
 
@@ -166,7 +195,13 @@ class UserController {
       await userService.resetPassword(req.body);
       successResponse(res, '密码重置成功');
     } catch (error: any) {
-      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
+      logger.error('密码重置失败', {
+        error: error.message,
+        stack: error.stack,
+        ip: req.ip,
+        code: HttpCode.INTERNAL_ERROR
+      });
+      errorResponse(res, error.message, 400, HttpCode.INTERNAL_ERROR);
     }
   }
 
@@ -183,7 +218,14 @@ class UserController {
       const result = await userService.uploadAvatar(req.user!.userId, req.file);
       successResponse(res, '头像上传成功', result);
     } catch (error: any) {
-      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
+      logger.error('头像上传失败', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.user?.userId,
+        ip: req.ip,
+        code: HttpCode.VALIDATION_ERROR
+      });
+      errorResponse(res, error.message, 400, HttpCode.VALIDATION_ERROR);
     }
   }
 
@@ -197,7 +239,14 @@ class UserController {
       const result = await userService.getUserAddresses(req.user!.userId);
       successResponse(res, '获取地址列表成功', result);
     } catch (error: any) {
-      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
+      logger.error('获取地址列表失败', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.user?.userId,
+        ip: req.ip,
+        code: HttpCode.INTERNAL_ERROR
+      });
+      errorResponse(res, error.message, 400, HttpCode.INTERNAL_ERROR);
     }
   }
 
@@ -211,7 +260,14 @@ class UserController {
       const result = await userService.getDefaultAddress(req.user!.userId);
       successResponse(res, '获取默认地址成功', result);
     } catch (error: any) {
-      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
+      logger.error('获取默认地址失败', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.user?.userId,
+        ip: req.ip,
+        code: HttpCode.INTERNAL_ERROR
+      });
+      errorResponse(res, error.message, 400, HttpCode.INTERNAL_ERROR);
     }
   }
 
@@ -225,7 +281,14 @@ class UserController {
       const result = await userService.createAddress(req.user!.userId, req.body);
       successResponse(res, '创建地址成功', result, 201);
     } catch (error: any) {
-      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
+      logger.error('创建地址失败', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.user?.userId,
+        ip: req.ip,
+        code: HttpCode.INTERNAL_ERROR
+      });
+      errorResponse(res, error.message, 400, HttpCode.INTERNAL_ERROR);
     }
   }
 
@@ -243,7 +306,15 @@ class UserController {
       const result = await userService.updateAddress(req.user!.userId, addressId, req.body);
       successResponse(res, '更新地址成功', result);
     } catch (error: any) {
-      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
+      logger.error('更新地址失败', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.user?.userId,
+        addressId: req.params.id,
+        ip: req.ip,
+        code: HttpCode.VALIDATION_ERROR
+      });
+      errorResponse(res, error.message, 400, HttpCode.VALIDATION_ERROR);
     }
   }
 
@@ -261,7 +332,15 @@ class UserController {
       await userService.setDefaultAddress(req.user!.userId, addressId);
       successResponse(res, '设置默认地址成功');
     } catch (error: any) {
-      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
+      logger.error('设置默认地址失败', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.user?.userId,
+        addressId: req.params.id,
+        ip: req.ip,
+        code: HttpCode.VALIDATION_ERROR
+      });
+      errorResponse(res, error.message, 400, HttpCode.VALIDATION_ERROR);
     }
   }
 
@@ -279,7 +358,15 @@ class UserController {
       await userService.deleteAddress(req.user!.userId, addressId);
       successResponse(res, '删除地址成功');
     } catch (error: any) {
-      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
+      logger.error('删除地址失败', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.user?.userId,
+        addressId: req.params.id,
+        ip: req.ip,
+        code: HttpCode.VALIDATION_ERROR
+      });
+      errorResponse(res, error.message, 400, HttpCode.VALIDATION_ERROR);
     }
   }
 
@@ -294,7 +381,15 @@ class UserController {
       await userService.batchDeleteAddresses(req.user!.userId, addressIds);
       successResponse(res, '批量删除地址成功');
     } catch (error: any) {
-      errorResponse(res, error.message, 400, error.code || 'VALIDATION_ERROR');
+      logger.error('批量删除地址失败', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.user?.userId,
+        addressIds: req.body.addressIds,
+        ip: req.ip,
+        code: HttpCode.INTERNAL_ERROR
+      });
+      errorResponse(res, error.message, 400, HttpCode.INTERNAL_ERROR);
     }
   }
 }

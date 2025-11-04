@@ -10,10 +10,7 @@ import { TokenPair } from "../types/user";
  * @param payload - 额外的载荷数据
  * @returns 包含access_token和refresh_token的对象
  */
-const generateToken = (
-  userId: number,
-  payload: Partial<JwtPayload> = {}
-): TokenPair => {
+const generateToken = (userId: number): TokenPair => {
   //生成访问令牌对象
   const normalTokenPayload: JwtPayload = {
     userId,
@@ -30,15 +27,13 @@ const generateToken = (
     exp: Math.floor(addTime(new Date(), config.jwt.refreshExpiresIn) / 1000),
   };
 
+  logger.info("打印两个", normalTokenPayload, refreshTokenPayload);
+
   // 生成访问令牌
-  const accessToken = jwt.sign(normalTokenPayload, config.jwt.secret, {
-    expiresIn: config.jwt.expiresIn,
-  } as any);
+  const accessToken = jwt.sign(normalTokenPayload, config.jwt.secret);
 
   // 生成刷新令牌
-  const refreshToken = jwt.sign(refreshTokenPayload, config.jwt.secret, {
-    expiresIn: config.jwt.refreshExpiresIn,
-  } as any);
+  const refreshToken = jwt.sign(refreshTokenPayload, config.jwt.secret);
 
   logger.info(`Token generated for user: ${userId}`);
 
@@ -92,8 +87,10 @@ const verifyToken = (token: string): JwtPayloadOut => {
     //判断是过期还是无效
     if (jwtError instanceof jwt.TokenExpiredError) {
       out.isExpired = true;
+      logger.error("令牌过期:", jwtError.message);
     } else if (jwtError instanceof jwt.JsonWebTokenError) {
       out.isValid = true;
+      logger.error("令牌无效:", jwtError.message);
     }
   }
   return out;

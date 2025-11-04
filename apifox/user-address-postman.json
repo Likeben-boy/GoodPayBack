@@ -1,0 +1,845 @@
+{
+  "info": {
+    "name": "用户地址管理接口测试",
+    "description": "测试用户地址的增删改查功能，包括获取地址列表、添加地址、更新地址、设置默认地址和删除地址等操作",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "user-address-collection",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "item": [
+    {
+      "name": "获取用户地址列表",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses"
+          ]
+        },
+        "description": "获取当前用户的所有地址列表"
+      },
+      "response": []
+    },
+    {
+      "name": "获取用户默认地址",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses/default",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses",
+            "default"
+          ]
+        },
+        "description": "获取当前用户的默认地址"
+      },
+      "response": []
+    },
+    {
+      "name": "添加用户地址 - 完整信息",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"recipient\": \"张三\",\n  \"phone\": \"13812345678\",\n  \"province\": \"北京市\",\n  \"city\": \"北京市\",\n  \"district\": \"朝阳区\",\n  \"detailedAddress\": \"三里屯街道工人体育场北路8号院\",\n  \"postalCode\": \"100027\",\n  \"isDefault\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses"
+          ]
+        },
+        "description": "添加完整的用户地址信息，包含所有字段"
+      },
+      "response": []
+    },
+    {
+      "name": "添加用户地址 - 最小必填字段",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"recipient\": \"李四\",\n  \"phone\": \"13987654321\",\n  \"province\": \"上海市\",\n  \"city\": \"上海市\",\n  \"district\": \"浦东新区\",\n  \"detailedAddress\": \"陆家嘴金融贸易区世纪大道100号\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses"
+          ]
+        },
+        "description": "添加只包含必填字段的最小地址信息"
+      },
+      "response": []
+    },
+    {
+      "name": "添加用户地址 - 收件人姓名过短",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"recipient\": \"张\",\n  \"phone\": \"13812345678\",\n  \"province\": \"北京市\",\n  \"city\": \"北京市\",\n  \"district\": \"朝阳区\",\n  \"detailedAddress\": \"三里屯街道工人体育场北路8号院\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses"
+          ]
+        },
+        "description": "测试收件人姓名长度小于2个字符，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "添加用户地址 - 收件人姓名过长",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"recipient\": \"这是一个非常长的收件人姓名超过了二十个字符的限制\",\n  \"phone\": \"13812345678\",\n  \"province\": \"北京市\",\n  \"city\": \"北京市\",\n  \"district\": \"朝阳区\",\n  \"detailedAddress\": \"三里屯街道工人体育场北路8号院\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses"
+          ]
+        },
+        "description": "测试收件人姓名长度超过20个字符，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "添加用户地址 - 手机号格式错误",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"recipient\": \"王五\",\n  \"phone\": \"12345678901\",\n  \"province\": \"北京市\",\n  \"city\": \"北京市\",\n  \"district\": \"朝阳区\",\n  \"detailedAddress\": \"三里屯街道工人体育场北路8号院\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses"
+          ]
+        },
+        "description": "测试无效的手机号格式，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "添加用户地址 - 详细地址过短",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"recipient\": \"赵六\",\n  \"phone\": \"13812345678\",\n  \"province\": \"北京市\",\n  \"city\": \"北京市\",\n  \"district\": \"朝阳区\",\n  \"detailedAddress\": \"地址\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses"
+          ]
+        },
+        "description": "测试详细地址长度小于5个字符，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "添加用户地址 - 详细地址过长",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"recipient\": \"赵六\",\n  \"phone\": \"13812345678\",\n  \"province\": \"北京市\",\n  \"city\": \"北京市\",\n  \"district\": \"朝阳区\",\n  \"detailedAddress\": \"这是一个非常详细的地址信息，它超过了一百个字符的限制，用于测试系统在处理超长地址时的验证逻辑，确保能够正确返回错误信息而不会导致系统异常\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses"
+          ]
+        },
+        "description": "测试详细地址长度超过100个字符，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "添加用户地址 - 邮政编码格式错误",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"recipient\": \"孙七\",\n  \"phone\": \"13812345678\",\n  \"province\": \"北京市\",\n  \"city\": \"北京市\",\n  \"district\": \"朝阳区\",\n  \"detailedAddress\": \"三里屯街道工人体育场北路8号院\",\n  \"postalCode\": \"12345\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses"
+          ]
+        },
+        "description": "测试邮政编码不是6位数字，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "添加用户地址 - 缺少必填字段（收件人）",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"13812345678\",\n  \"province\": \"北京市\",\n  \"city\": \"北京市\",\n  \"district\": \"朝阳区\",\n  \"detailedAddress\": \"三里屯街道工人体育场北路8号院\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses"
+          ]
+        },
+        "description": "测试缺少收件人字段，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "添加用户地址 - 缺少必填字段（省份）",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"recipient\": \"周八\",\n  \"phone\": \"13812345678\",\n  \"city\": \"北京市\",\n  \"district\": \"朝阳区\",\n  \"detailedAddress\": \"三里屯街道工人体育场北路8号院\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses"
+          ]
+        },
+        "description": "测试缺少省份字段，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "更新用户地址 - 部分更新",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"recipient\": \"张三丰\",\n  \"detailedAddress\": \"更新后的详细地址：三里屯街道工人体育场北路8号院A座1501室\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses/{{addressId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses",
+            "{{addressId}}"
+          ]
+        },
+        "description": "更新地址的部分字段（收件人和详细地址）"
+      },
+      "response": []
+    },
+    {
+      "name": "更新用户地址 - 完整更新",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"recipient\": \"李四光\",\n  \"phone\": \"13912345678\",\n  \"province\": \"广东省\",\n  \"city\": \"深圳市\",\n  \"district\": \"南山区\",\n  \"detailedAddress\": \"科技园南区深南大道9996号\",\n  \"postalCode\": \"518000\",\n  \"isDefault\": false\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses/{{addressId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses",
+            "{{addressId}}"
+          ]
+        },
+        "description": "更新地址的所有字段"
+      },
+      "response": []
+    },
+    {
+      "name": "更新用户地址 - 无效的地址ID",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"recipient\": \"测试用户\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses/999999",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses",
+            "999999"
+          ]
+        },
+        "description": "测试更新不存在的地址ID，应该返回错误"
+      },
+      "response": []
+    },
+    {
+      "name": "设置默认地址",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses/{{addressId}}/default",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses",
+            "{{addressId}}",
+            "default"
+          ]
+        },
+        "description": "将指定地址设置为默认地址"
+      },
+      "response": []
+    },
+    {
+      "name": "设置默认地址 - 无效的地址ID",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses/999999/default",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses",
+            "999999",
+            "default"
+          ]
+        },
+        "description": "测试设置不存在的地址为默认地址，应该返回错误"
+      },
+      "response": []
+    },
+    {
+      "name": "删除单个地址",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses/{{addressId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses",
+            "{{addressId}}"
+          ]
+        },
+        "description": "删除指定的单个地址"
+      },
+      "response": []
+    },
+    {
+      "name": "删除地址 - 无效的地址ID",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses/999999",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses",
+            "999999"
+          ]
+        },
+        "description": "测试删除不存在的地址ID，应该返回错误"
+      },
+      "response": []
+    },
+    {
+      "name": "批量删除地址",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "[1, 2, 3]"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses"
+          ]
+        },
+        "description": "批量删除多个地址，传入地址ID数组"
+      },
+      "response": []
+    },
+    {
+      "name": "批量删除地址 - 空数组",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "[]"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses"
+          ]
+        },
+        "description": "测试批量删除时传入空数组，应该返回验证错误"
+      },
+      "response": []
+    },
+    {
+      "name": "批量删除地址 - 无效的地址ID",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "[999999, 888888]"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses"
+          ]
+        },
+        "description": "测试批量删除不存在的地址ID，应该返回错误"
+      },
+      "response": []
+    },
+    {
+      "name": "地址管理 - 未授权访问",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses"
+          ]
+        },
+        "description": "测试未提供Authorization令牌时的访问，应该返回401未授权错误"
+      },
+      "response": []
+    },
+    {
+      "name": "地址管理 - 无效的令牌",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer invalid_token",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/addresses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "addresses"
+          ]
+        },
+        "description": "测试使用无效的Authorization令牌，应该返回401未授权错误"
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string",
+      "description": "API基础URL"
+    },
+    {
+      "key": "userToken",
+      "value": "your_jwt_token_here",
+      "type": "string",
+      "description": "用户JWT认证令牌，需要先调用登录接口获取"
+    },
+    {
+      "key": "addressId",
+      "value": "1",
+      "type": "string",
+      "description": "地址ID，可以通过获取地址列表接口获得，或使用添加地址接口创建后获得"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// 在这里可以添加预处理脚本",
+          "// 比如动态设置token等",
+          "console.log('Address API Test - Pre-request Script');"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// 在这里可以添加测试脚本",
+          "// 比如验证响应状态码、响应时间等",
+          "pm.test('Status code is successful', function () {",
+          "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+          "});",
+          "",
+          "pm.test('Response time is less than 3000ms', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+          "});"
+        ]
+      }
+    }
+  ]
+}

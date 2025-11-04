@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { ApiResponse, PaginationInfo, PaginatedResponse } from '../types';
+import { ApiResponse, PaginationInfo, PaginatedResponse,HttpCode } from '../types';
 import config from '../config';
 
 /**
@@ -17,6 +17,7 @@ const successResponse = <T = any>(
 ): void => {
   const response: ApiResponse<T> = {
     status: 'success',
+    code:HttpCode.SUCCESS,
     message,
     timestamp: new Date().toISOString()
   };
@@ -46,7 +47,7 @@ const errorResponse = (
   res: Response,
   message: string = 'Internal Server Error',
   statusCode: number = 500,
-  code: string = 'INTERNAL_ERROR',
+  code: HttpCode = HttpCode.INTERNAL_ERROR,
   details?: any
 ): void => {
   const response: ApiResponse = {
@@ -116,6 +117,7 @@ class ApiResponseBuilder {
     const response: ApiResponse<T> = {
       status: 'success',
       message,
+      code: HttpCode.SUCCESS,
       timestamp: new Date().toISOString()
     };
 
@@ -136,7 +138,7 @@ class ApiResponseBuilder {
   static error(
     message: string = 'Internal Server Error',
     statusCode: number = 500,
-    code: string = 'INTERNAL_ERROR',
+    code: HttpCode = HttpCode.INTERNAL_ERROR,
     details?: any
   ): ApiResponse {
     return {
@@ -162,6 +164,7 @@ class ApiResponseBuilder {
     return {
       status: 'success',
       message,
+      code: HttpCode.SUCCESS,
       data: items,
       pagination,
       timestamp: new Date().toISOString()
@@ -180,7 +183,7 @@ class ApiResponseBuilder {
     return {
       status: 'error',
       message,
-      code: 'VALIDATION_ERROR',
+      code: HttpCode.VALIDATION_ERROR,
       errors,
       timestamp: new Date().toISOString()
     };

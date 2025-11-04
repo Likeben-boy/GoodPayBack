@@ -6,7 +6,7 @@ import config from "./config";
 
 // 导入路由
 import userRoutes from './modules/user/routes/user.routes';
-// import restaurantRoutes from './modules/restaurant/routes/restaurant.routes';
+import restaurantRoutes from './modules/restaurant/routes/restaurant.routes';
 // import productRoutes from './modules/product/routes/product.routes';
 // import cartRoutes from './modules/cart/routes/cart.routes';
 // import orderRoutes from './modules/order/routes/order.routes';
@@ -17,7 +17,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { generalLimiter } from './middleware/rateLimiter';
 
 // 导入工具
-import { ApiResponse } from './types';
+import { ApiResponse,HttpCode } from './types';
 import logger, { businessLogger } from '@/utils/logger';
 
 // 创建Express应用
@@ -61,6 +61,7 @@ app.get('/health', (req: Request, res: Response) => {
   const response: ApiResponse = {
     status: 'success',
     message: 'Server is running',
+    code:HttpCode.SUCCESS,
     data: {
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
@@ -73,7 +74,7 @@ app.get('/health', (req: Request, res: Response) => {
 
 // API路由
 app.use('/api/v1/users', userRoutes);
-// app.use('/api/v1/restaurants', restaurantRoutes);
+app.use('/api/v1/restaurants', restaurantRoutes);
 // app.use('/api/v1/products', productRoutes);
 // app.use('/api/v1/cart', authMiddleware, cartRoutes);
 // app.use('/api/v1/orders', authMiddleware, orderRoutes);

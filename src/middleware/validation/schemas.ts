@@ -22,12 +22,17 @@ export const userValidation = {
   ],
 
   login: [
+    body("password")
+      .optional()
+      .isLength({ min: 6, max: 20 })
+      .withMessage("密码长度必须在6-20个字符之间")
+      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+      .withMessage("密码必须包含大小写字母和数字"),
     body("phone")
       .notEmpty()
-      .withMessage("请输入手机号")
+      .withMessage("请输入手机号码")
       .matches(/^1[3-9]\d{9}$/)
-      .withMessage("请输入有效的手机号码"),
-    body("password").notEmpty().withMessage("请输入密码"),
+      .withMessage("请输入有效的手机号码")
   ],
 
   updateProfile: [

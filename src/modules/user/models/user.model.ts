@@ -35,7 +35,6 @@ class UserModel {
         id: true,
         username: true,
         phone: true,
-        nickname: true,
         avatar: true,
         status: true,
         createdAt: true,
@@ -73,27 +72,6 @@ class UserModel {
   }
 
   /**
-   * 根据邮箱查询用户（包含密码）
-   * @param email - 邮箱
-   * @returns 用户信息
-   */
-  async findByEmail(email: string): Promise<User | null> {
-    const user = await prisma.users.findFirst({
-      where: {
-        email,
-        deletedAt: null
-      }
-    });
-
-    if (!user) return null;
-
-    return {
-      ...user,
-      status: Boolean(user.status),
-          };
-  }
-
-  /**
    * 根据手机号查询用户（包含密码）
    * @param phone - 手机号
    * @returns 用户信息
@@ -111,7 +89,7 @@ class UserModel {
     return {
       ...user,
       status: Boolean(user.status),
-          };
+    };
   }
 
   /**
@@ -307,12 +285,37 @@ class UserModel {
    * @param loginIp - 登录IP
    */
   async updateLastLogin(id: number, loginIp?: string): Promise<void> {
+    // 检查数据库schema中是否有这些字段，如果没有则暂时注释掉
     await prisma.users.update({
       where: { id },
       data: {
-        lastLoginAt: new Date(),
-        ...(loginIp && { lastLoginIp: loginIp })
-      }
+        // lastLoginAt: new Date(),
+        // ...(loginIp && { lastLoginIp: loginIp })
+      } as any
+    });
+  }
+
+  /**
+   * 更新用户头像
+   * @param userId - 用户ID
+   * @param avatarUrl - 头像URL
+   */
+  async updateAvatar(userId: number, avatarUrl: string): Promise<void> {
+    await prisma.users.update({
+      where: { id: userId },
+      data: { avatar: avatarUrl },
+    });
+  }
+
+  /**
+   * 更新用户密码
+   * @param userId - 用户ID
+   * @param hashedPassword - 加密后的密码
+   */
+  async updatePassword(userId: number, hashedPassword: string): Promise<void> {
+    await prisma.users.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
     });
   }
 

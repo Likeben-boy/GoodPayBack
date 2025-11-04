@@ -19,27 +19,18 @@
 ```bash
 # 在 prisma 目录下执行
 node convert-schema.js
-
-# 或者使用 npm script
-npm run convert
 ```
 
 ### 2. 恢复备份
 
 ```bash
 node convert-schema.js --restore
-
-# 或者使用 npm script
-npm run restore
 ```
 
 ### 3. 查看帮助
 
 ```bash
 node convert-schema.js --help
-
-# 或者使用 npm script
-npm run help
 ```
 
 ## 转换示例
