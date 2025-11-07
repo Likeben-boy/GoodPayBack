@@ -116,9 +116,9 @@ class UserController {
         error: error.message,
         stack: error.stack,
         ip: req.ip,
-        code: HttpCode.INTERNAL_ERROR
+        code: HttpCode.INVALID_TOKEN
       });
-      errorResponse(res, error.message, 400, HttpCode.INTERNAL_ERROR);
+      errorResponse(res, error.message, 400, HttpCode.INVALID_TOKEN);
     }
   }
 

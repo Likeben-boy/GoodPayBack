@@ -208,41 +208,6 @@ class RestaurantController {
   }
 
   /**
-   * 获取热门餐厅
-   * @param req - 请求对象
-   * @param res - 响应对象
-   */
-  async getPopularRestaurants(req: Request, res: Response): Promise<void> {
-    try {
-      const { limit = 10 } = req.query;
-
-      businessLogger.debug('获取热门餐厅', {
-        limit,
-        ip: req.ip
-      });
-
-      const restaurants = await restaurantService.getPopularRestaurants(limit as string);
-
-      businessLogger.info('获取热门餐厅成功', {
-        limit,
-        resultCount: restaurants?.length || 0,
-        ip: req.ip
-      });
-
-      successResponse(res, '获取热门餐厅成功', restaurants);
-    } catch (error: any) {
-      logger.error('获取热门餐厅失败', {
-        error: error.message,
-        stack: error.stack,
-        limit: req.query.limit,
-        ip: req.ip,
-        code: error.code || 'FETCH_POPULAR_RESTAURANTS_ERROR'
-      });
-      errorResponse(res, error.message, 500, HttpCode.INTERNAL_ERROR);
-    }
-  }
-
-  /**
    * 获取餐厅标签列表
    * @param req - 请求对象
    * @param res - 响应对象

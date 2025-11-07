@@ -25,13 +25,6 @@ router.get('/',
   restaurantController.getRestaurants
 );
 
-// 获取热门餐厅
-router.get('/popular',
-  validate(restaurantValidation.getPopularRestaurants),
-  restaurantController.getPopularRestaurants
-);
-
-
 // 获取餐厅标签列表
 router.get('/tags',
   validate(restaurantValidation.getRestaurantTags),
