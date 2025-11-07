@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import userController from '../controllers/user.controller';
 import { authMiddleware } from '../../../middleware/auth';
-import { uploadSingle, imageOnly } from '../../../middleware/upload';
 import { validate } from '../../../middleware/validation';
 import { userValidation } from '../../../middleware/validation/schemas';
 import {
@@ -66,15 +65,6 @@ router.put('/password', authMiddleware, validate(userValidation.changePassword),
 
 // 重置密码
 router.post('/reset-password', passwordResetLimiter, userController.resetPassword);
-
-// 上传头像
-router.post('/avatar',
-  authMiddleware,
-  uploadLimiter,
-  uploadSingle('avatar'),
-  imageOnly,
-  userController.uploadAvatar
-);
 
 // 获取用户地址列表
 router.get('/addresses', authMiddleware, userController.getAddresses);

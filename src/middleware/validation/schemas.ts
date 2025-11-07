@@ -243,3 +243,80 @@ export const paymentValidation = {
       .withMessage("退款原因长度必须在1-200个字符之间"),
   ],
 };
+
+// 餐厅验证规则
+export const restaurantValidation = {
+  // 获取餐厅列表（支持搜索功能）
+  getRestaurants: [
+    query("page")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("页码必须是大于0的整数"),
+    query("limit")
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage("每页数量必须是1-100之间的整数"),
+    query("keyword")
+      .optional()
+      .trim()
+      .isLength({ min: 1, max: 50 })
+      .withMessage("搜索关键词长度必须在1-50个字符之间"),
+    query("sortBy")
+      .optional()
+      .isIn(["createdAt", "rating", "distance", "deliveryTime"])
+      .withMessage("排序字段无效"),
+    query("sortOrder")
+      .optional()
+      .isIn(["asc", "desc"])
+      .withMessage("排序方式必须是asc或desc"),
+    query("minRating")
+      .optional()
+      .isFloat({ min: 0, max: 5 })
+      .withMessage("最低评分必须是0-5之间的数字"),
+    query("tags")
+      .optional()
+      .trim()
+      .isLength({ min: 1 })
+      .withMessage("标签不能为空"),
+  ],
+
+  
+  // 获取热门餐厅
+  getPopularRestaurants: [
+    query("limit")
+      .optional()
+      .isInt({ min: 1, max: 50 })
+      .withMessage("数量限制必须是1-50之间的整数"),
+  ],
+
+  // 获取餐厅标签
+  getRestaurantTags: [
+    query("tagType")
+      .optional()
+      .isIn(["cuisine", "feature", "price_range", "service"])
+      .withMessage("标签类型必须是cuisine、feature、price_range或service"),
+  ],
+
+  // 获取餐厅详情
+  getRestaurantDetail: [
+    param("id").notEmpty().isInt({ min: 1 }).withMessage("餐厅ID必须是大于0的整数"),
+  ],
+
+  // 获取餐厅菜单
+  getRestaurantMenu: [
+    param("id").notEmpty().isInt({ min: 1 }).withMessage("餐厅ID必须是大于0的整数"),
+  ],
+
+  // 获取指定分类的菜品 (使用查询参数，符合 RESTful GET 请求设计)
+  getDishesByCategory: [
+    query("restaurantId")
+      .notEmpty()
+      .isInt({ min: 1 })
+      .withMessage("餐厅ID必须是大于0的整数"),
+    query("categoryId")
+      .notEmpty()
+      .isInt({ min: 1 })
+      .withMessage("分类ID必须是大于0的整数"),
+  ],
+
+  };

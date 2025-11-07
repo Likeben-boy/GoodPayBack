@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import config from "../config";
 import logger from "./logger";
 import { JwtPayload, JwtPayloadOut, JwtType } from "../types";
-import { TokenPair } from "../types/user";
+import { TokenPair } from "../modules/user/models/user";
 
 /**
  * 生成JWT令牌

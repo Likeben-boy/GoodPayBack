@@ -2,7 +2,7 @@ import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import config from "./config";
+import config from "./config/index.js";
 
 // 导入路由
 import userRoutes from './modules/user/routes/user.routes';

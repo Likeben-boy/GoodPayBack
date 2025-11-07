@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { ApiResponse, PaginationInfo, PaginatedResponse,HttpCode } from '../types';
-import config from '../config';
+import config from '../config/index.js';
 
 /**
  * 成功响应工具函数
@@ -28,8 +28,9 @@ const successResponse = <T = any>(
 
   // 分页数据支持
   if (data && typeof data === 'object' && (data as any).pagination) {
-    response.pagination = (data as any).pagination;
-    response.data = (data as any).items;
+    const { pagination, ...dataWithoutPagination } = data as any;
+    response.pagination = pagination;
+    response.data = dataWithoutPagination.data;
   }
 
   res.status(statusCode).json(response);
@@ -69,34 +70,6 @@ const errorResponse = (
   res.status(statusCode).json(response);
 };
 
-/**
- * 分页数据格式化
- * @param items - 数据项
- * @param page - 当前页码
- * @param limit - 每页数量
- * @param total - 总数
- * @returns 分页数据
- */
-const formatPagination = <T>(
-  items: T[],
-  page: number,
-  limit: number,
-  total: number
-): PaginatedResponse<T> => {
-  const pagination: PaginationInfo = {
-    page,
-    limit,
-    total,
-    pages: Math.ceil(total / limit),
-    hasNext: page < Math.ceil(total / limit),
-    hasPrev: page > 1
-  };
-
-  return {
-    items,
-    pagination
-  };
-};
 
 /**
  * API响应包装器类
@@ -151,27 +124,6 @@ class ApiResponseBuilder {
   }
 
   /**
-   * 分页响应
-   * @param items - 数据项
-   * @param pagination - 分页信息
-   * @param message - 消息
-   */
-  static paginated<T>(
-    items: T[],
-    pagination: PaginationInfo,
-    message: string = 'Success'
-  ): ApiResponse<T[]> {
-    return {
-      status: 'success',
-      message,
-      code: HttpCode.SUCCESS,
-      data: items,
-      pagination,
-      timestamp: new Date().toISOString()
-    };
-  }
-
-  /**
    * 验证错误响应
    * @param errors - 错误数组
    * @param message - 消息
@@ -193,6 +145,5 @@ class ApiResponseBuilder {
 export {
   successResponse,
   errorResponse,
-  formatPagination,
   ApiResponseBuilder
 };

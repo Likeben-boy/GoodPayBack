@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import logger, { dbLogger } from '../utils/logger';
-import config from '../config';
+import config from '../config/index.js';
 
 // 扩展全局类型以包含Prisma客户端
 declare global {
@@ -20,7 +20,7 @@ const createPrismaClient = (): PrismaClient => {
 
   // 设置 Prisma 事件监听器来集成 Winston 日志
   client.$on('query', (e) => {
-    dbLogger.debug('Database Query', {
+    dbLogger.info('Database Query', {
       query: e.query,
       params: e.params,
       duration: `${e.duration}ms`,

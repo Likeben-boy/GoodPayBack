@@ -47,7 +47,7 @@ export interface PaginationInfo {
  */
 export interface PaginatedResponse<T> {
   /** 数据项列表 */
-  items: T[];
+  data: T[];
   /** 分页信息 */
   pagination: PaginationInfo;
 }
@@ -172,7 +172,7 @@ export enum HttpCode{
     SUCCESS = 'SUCCESS',
 
     //校验错误
-    VALIDATION_ERROR ='VALIDATION_ERROR',
+    VALIDATION_ERROR = 'VALIDATION_ERROR',
 
     //内部错误
     INTERNAL_ERROR = 'INTERNAL_ERROR',
@@ -188,4 +188,28 @@ export enum HttpCode{
 
     //认证失败
     AUTH_FAILED = 'AUTH_FAILED',
+
+    //数据已存在
+    DUPLICATE_ENTRY = 'DUPLICATE_ENTRY',
+
+    //关联数据不存在
+    FOREIGN_KEY_CONSTRAINT = 'FOREIGN_KEY_CONSTRAINT',
+
+    //路由不存在
+    ROUTE_NOT_FOUND = 'ROUTE_NOT_FOUND',
+
+    //资源不存在
+    NOT_FOUND = 'NOT_FOUND',
+
+    //权限不足
+    FORBIDDEN = 'FORBIDDEN',
+
+    //文件过大
+    FILE_TOO_LARGE = 'FILE_TOO_LARGE',
+
+    //无效文件类型
+    INVALID_FILE_TYPE = 'INVALID_FILE_TYPE',
+
+    //限流
+    RATE_LIMIT_EXCEEDED = 'RATE_LIMIT_EXCEEDED'
 }

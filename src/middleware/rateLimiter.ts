@@ -1,11 +1,11 @@
 import rateLimit, { RateLimitRequestHandler, MemoryStore } from 'express-rate-limit';
-import { ApiResponse } from '../types';
-import config from '../config';
+import { ApiResponse,HttpCode } from '../types';
+import config from '../config/index.js';
 
 /**
  * 创建限流响应
  */
-const createRateLimitResponse = (message: string, code: string = 'RATE_LIMIT_EXCEEDED'): ApiResponse => ({
+const createRateLimitResponse = (message: string, code: HttpCode = HttpCode.RATE_LIMIT_EXCEEDED): ApiResponse => ({
   status: 'error',
   message,
   code,
@@ -19,7 +19,7 @@ const createRateLimiter = (options: {
   windowMs: number;
   max: number;
   message: string;
-  code?: string;
+  code?: HttpCode;
   prefix?: string;
   skipSuccessfulRequests?: boolean;
 }): RateLimitRequestHandler => {
@@ -41,7 +41,7 @@ const generalLimiter: RateLimitRequestHandler = createRateLimiter({
   windowMs: config.rateLimitWindowMs,
   max: config.rateLimitMaxRequests,
   message: '请求过于频繁，请稍后再试',
-  code: 'RATE_LIMIT_EXCEEDED',
+  code: HttpCode.RATE_LIMIT_EXCEEDED,
   prefix: 'rate_limit:'
 });
 
@@ -53,7 +53,7 @@ const loginLimiter: RateLimitRequestHandler = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15分钟
   max: 99, // 最多5次尝试
   message: '登录尝试过于频繁，请15分钟后再试',
-  code: 'LOGIN_RATE_LIMIT_EXCEEDED',
+  code: HttpCode.RATE_LIMIT_EXCEEDED,
   prefix: 'login_limit:'
 });
 
@@ -65,7 +65,7 @@ const registerLimiter: RateLimitRequestHandler = createRateLimiter({
   windowMs: 60 * 60 * 1000, // 1小时
   max: 99, // 最多5次注册
   message: '注册尝试过于频繁，请1小时后再试',
-  code: 'REGISTER_RATE_LIMIT_EXCEEDED',
+  code: HttpCode.RATE_LIMIT_EXCEEDED,
   prefix: 'register_limit:'
 });
 
@@ -76,7 +76,7 @@ const passwordResetLimiter: RateLimitRequestHandler = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15分钟
   max: 99, // 最多2次尝试
   message: '密码重置尝试过于频繁，请15分钟后再试',
-  code: 'PASSWORD_RESET_RATE_LIMIT_EXCEEDED',
+  code: HttpCode.RATE_LIMIT_EXCEEDED,
   prefix: 'password_reset_limit:'
 });
 
@@ -87,19 +87,8 @@ const smsLimiter: RateLimitRequestHandler = createRateLimiter({
   windowMs: 60 * 1000, // 1分钟
   max: 1, // 最多1条
   message: '短信发送过于频繁，请1分钟后再试',
-  code: 'SMS_RATE_LIMIT_EXCEEDED',
+  code: HttpCode.RATE_LIMIT_EXCEEDED,
   prefix: 'sms_limit:'
-});
-
-/**
- * 邮件验证码限流中间件
- */
-const emailLimiter: RateLimitRequestHandler = createRateLimiter({
-  windowMs: 60 * 1000, // 1分钟
-  max: 1, // 最多1封
-  message: '邮件发送过于频繁，请1分钟后再试',
-  code: 'EMAIL_RATE_LIMIT_EXCEEDED',
-  prefix: 'email_limit:'
 });
 
 /**
@@ -109,7 +98,7 @@ const uploadLimiter: RateLimitRequestHandler = createRateLimiter({
   windowMs: 60 * 1000, // 1分钟
   max: 10, // 最多10次
   message: '文件上传过于频繁，请1分钟后再试',
-  code: 'UPLOAD_RATE_LIMIT_EXCEEDED',
+  code: HttpCode.RATE_LIMIT_EXCEEDED,
   prefix: 'upload_limit:'
 });
 
@@ -120,7 +109,7 @@ const paymentLimiter: RateLimitRequestHandler = createRateLimiter({
   windowMs: 60 * 1000, // 1分钟
   max: 5, // 最多5次
   message: '支付请求过于频繁，请1分钟后再试',
-  code: 'PAYMENT_RATE_LIMIT_EXCEEDED',
+  code: HttpCode.RATE_LIMIT_EXCEEDED,
   prefix: 'payment_limit:'
 });
 
@@ -159,7 +148,6 @@ export {
   registerLimiter,
   passwordResetLimiter,
   smsLimiter,
-  emailLimiter,
   uploadLimiter,
   paymentLimiter,
   createLimiter

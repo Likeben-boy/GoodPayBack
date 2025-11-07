@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
@@ -236,30 +237,14 @@ model RefundRecords {
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model RestaurantTagMaster {
-  id        Int                             @id @default(autoincrement())
-  tagName   String                          @unique(map: "tag_name") @map("tag_name") @db.VarChar(50)
-  tagType   restaurant_tag_master_tag_type? @default(cuisine) @map("tag_type")
-  color     String?                         @default("#ff6b6b") @db.VarChar(7)
-  icon      String?                         @db.VarChar(100)
-  sortOrder Int                             @default(0) @map("sort_order")
-  status    Boolean                         @default(true)
-  createdAt DateTime                        @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt DateTime                        @default(now()) @map("updated_at") @db.DateTime(0)
-
-  @@index([sortOrder], map: "idx_sort_order")
-  @@index([status], map: "idx_status")
-  @@index([tagType], map: "idx_tag_type")
-  @@map("restaurant_tag_master")
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model RestaurantTagRelations {
-  id           Int      @id @default(autoincrement())
-  restaurantId Int      @map("restaurant_id")
-  tagId        Int      @map("tag_id")
-  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(0)
-  createdBy    Int?     @map("created_by")
+  id             Int           @id @default(autoincrement())
+  restaurantId   Int           @map("restaurant_id")
+  tagId          Int           @map("tag_id")
+  createdAt      DateTime      @default(now()) @map("created_at") @db.DateTime(0)
+  createdBy      Int?          @map("created_by")
+  restaurantTag RestaurantTag @relation(fields: [tagId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "restaurant_tag_relations_restaurant_tag_FK")
+  restaurants    Restaurants   @relation(fields: [restaurantId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "restaurant_tag_relations_restaurants_FK")
 
   @@unique([restaurantId, tagId], map: "uk_restaurant_tag")
   @@index([restaurantId], map: "idx_restaurant_id")
@@ -268,30 +253,20 @@ model RestaurantTagRelations {
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model RestaurantTagStats {
-  tagId      Int       @id @map("tag_id")
-  usageCount Int       @default(0) @map("usage_count")
-  lastUsedAt DateTime? @map("last_used_at") @db.DateTime(0)
-
-  @@map("restaurant_tag_stats")
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model Restaurants {
-  id           Int       @id @default(autoincrement())
-  name         String    @db.VarChar(100)
-  image        String    @db.VarChar(255)
-  rating       Decimal   @default(0.0) @db.Decimal(2, 1)
-  distance     Decimal   @default(0.00) @db.Decimal(4, 2)
-  deliveryFee  Decimal   @default(0.00) @map("delivery_fee") @db.Decimal(5, 2)
-  deliveryTime Int       @default(0) @map("delivery_time")
-  status       Boolean   @default(true)
-  createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt    DateTime  @default(now()) @map("updated_at") @db.DateTime(0)
-  deletedAt    DateTime? @map("deleted_at") @db.DateTime(0)
+  id                       Int                      @id @default(autoincrement())
+  name                     String                   @db.VarChar(100)
+  image                    String                   @db.VarChar(255)
+  rating                   Decimal                  @default(0.0) @db.Decimal(2, 1)
+  deliveryFee              Decimal                  @default(0.00) @map("delivery_fee") @db.Decimal(5, 2)
+  deliveryTime             Int                      @default(0) @map("delivery_time")
+  status                   Boolean                  @default(true)
+  createdAt                DateTime                 @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt                DateTime                 @default(now()) @map("updated_at") @db.DateTime(0)
+  deletedAt                DateTime?                @map("deleted_at") @db.DateTime(0)
+  restaurantTagRelations RestaurantTagRelations[]
 
   @@index([deletedAt], map: "idx_deleted_at")
-  @@index([distance], map: "idx_distance")
   @@index([rating], map: "idx_rating")
   @@index([status], map: "idx_status")
   @@map("restaurants")
@@ -327,7 +302,7 @@ model UserAddresses {
   isDefault     Boolean   @default(false) @map("is_default")
   createdAt     DateTime  @default(now()) @map("created_at") @db.DateTime(0)
   updatedAt     DateTime  @default(now()) @map("updated_at") @db.DateTime(0)
-  deleteAt     DateTime? @db.DateTime(0) @map("delete_at")
+  deleteAt      DateTime? @map("delete_at") @db.DateTime(0)
 
   @@index([isDefault], map: "idx_is_default")
   @@index([userId], map: "idx_user_id")
@@ -372,16 +347,28 @@ model Users {
   @@map("users")
 }
 
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model RestaurantTag {
+  id                       Int                      @id @default(autoincrement())
+  tagName                  String                   @unique(map: "tag_name") @map("tag_name") @db.VarChar(50)
+  tagType                  restaurant_tag_tag_type? @default(cuisine) @map("tag_type")
+  color                    String?                  @default("#ff6b6b") @db.VarChar(7)
+  icon                     String?                  @db.VarChar(100)
+  sortOrder                Int                      @default(0) @map("sort_order")
+  status                   Boolean                  @default(true)
+  createdAt                DateTime                 @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt                DateTime                 @default(now()) @map("updated_at") @db.DateTime(0)
+  restaurantTagRelations RestaurantTagRelations[]
+
+  @@index([sortOrder], map: "idx_sort_order")
+  @@index([status], map: "idx_status")
+  @@index([tagType], map: "idx_tag_type")
+  @@map("restaurant_tag")
+}
+
 enum coupons_coupon_type {
   discount
   full_reduce
-}
-
-enum restaurant_tag_master_tag_type {
-  cuisine
-  feature
-  price_range
-  service
 }
 
 enum delivery_info_delivery_status {
@@ -477,4 +464,11 @@ enum refund_records_processor_type {
   user
   merchant
   system
+}
+
+enum restaurant_tag_tag_type {
+  cuisine
+  feature
+  price_range
+  service
 }

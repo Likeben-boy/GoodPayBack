@@ -11,10 +11,10 @@ import {
   UpdateAddressInput,
   LoginResult,
   TokenPair,
-} from "@/types/user";
+} from "@/modules/user/models/user";
 import { generateToken, verifyAccessToken } from "@/utils/jwt";
-import userModel from '../models/user.model';
-import addressModel from '../models/address.model';
+import userModel from "../models/user.model";
+import addressModel from "../models/address.model";
 
 class UserService {
   /**
@@ -129,7 +129,10 @@ class UserService {
 
     // 验证密码
     if (loginData.password && userWithPassword.password) {
-      const isPasswordValid = await bcrypt.compare(loginData.password, userWithPassword.password);
+      const isPasswordValid = await bcrypt.compare(
+        loginData.password,
+        userWithPassword.password
+      );
       if (!isPasswordValid) {
         businessLogger.warn("密码错误", {
           operation: "user.login.invalid_password",
@@ -277,14 +280,19 @@ class UserService {
   ): Promise<void> {
     const { oldPassword, newPassword } = passwordData;
 
-    const userWithPassword = await userModel.findByUsername((await userModel.findById(userId))?.username || '');
+    const userWithPassword = await userModel.findByUsername(
+      (await userModel.findById(userId))?.username || ""
+    );
 
     if (!userWithPassword || !userWithPassword.password) {
       throw { message: "用户不存在", code: "USER_NOT_FOUND" };
     }
 
     // 验证旧密码
-    const isOldPasswordValid = await bcrypt.compare(oldPassword, userWithPassword.password);
+    const isOldPasswordValid = await bcrypt.compare(
+      oldPassword,
+      userWithPassword.password
+    );
     if (!isOldPasswordValid) {
       throw { message: "旧密码错误", code: "INVALID_OLD_PASSWORD" };
     }

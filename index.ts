@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import config from './src/config';
+import config from './src/config/index.js';
 import app from './src/app';
 import { testConnection } from './src/database/prisma';
 import logger from './src/utils/logger';

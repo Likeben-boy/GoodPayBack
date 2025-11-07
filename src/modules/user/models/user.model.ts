@@ -1,5 +1,5 @@
-import { prisma, softDelete, paginate } from '../../../database/prisma';
-import { User, CreateUserInput, UpdateUserInput } from '../../../types/user';
+import { prisma, softDelete, paginate } from "@/database/prisma";
+import { User, CreateUserInput, UpdateUserInput } from "./user";
 
 class UserModel {
   /**
@@ -15,7 +15,7 @@ class UserModel {
         password: userData.password,
         avatar: null,
         status: true,
-      }
+      },
     });
     return user.id;
   }
@@ -29,7 +29,7 @@ class UserModel {
     const user = await prisma.users.findFirst({
       where: {
         id,
-        deletedAt: null
+        deletedAt: null,
       },
       select: {
         id: true,
@@ -38,15 +38,15 @@ class UserModel {
         avatar: true,
         status: true,
         createdAt: true,
-        updatedAt: true
-      }
+        updatedAt: true,
+      },
     });
 
     if (!user) return null;
 
     return {
       ...user,
-      status: user.status
+      status: user.status,
     };
   }
 
@@ -59,8 +59,8 @@ class UserModel {
     const user = await prisma.users.findFirst({
       where: {
         username,
-        deletedAt: null
-      }
+        deletedAt: null,
+      },
     });
 
     if (!user) return null;
@@ -68,7 +68,7 @@ class UserModel {
     return {
       ...user,
       status: Boolean(user.status),
-          };
+    };
   }
 
   /**
@@ -80,8 +80,8 @@ class UserModel {
     const user = await prisma.users.findFirst({
       where: {
         phone,
-        deletedAt: null
-      }
+        deletedAt: null,
+      },
     });
 
     if (!user) return null;
@@ -102,9 +102,9 @@ class UserModel {
     const result = await prisma.users.updateMany({
       where: {
         id,
-        deletedAt: null
+        deletedAt: null,
       },
-      data: userData
+      data: userData,
     });
     return result.count;
   }
@@ -118,11 +118,11 @@ class UserModel {
     const result = await prisma.users.updateMany({
       where: {
         id,
-        deletedAt: null
+        deletedAt: null,
       },
       data: {
-        deletedAt: new Date()
-      }
+        deletedAt: new Date(),
+      },
     });
     return result.count;
   }
@@ -132,16 +132,18 @@ class UserModel {
    * @param options - 查询选项
    * @returns 用户列表
    */
-  async findAll(options: {
-    page?: number;
-    limit?: number;
-    status?: string;
-    keyword?: string;
-  } = {}): Promise<User[]> {
+  async findAll(
+    options: {
+      page?: number;
+      limit?: number;
+      status?: string;
+      keyword?: string;
+    } = {}
+  ): Promise<User[]> {
     const { page = 1, limit = 10, status, keyword } = options;
 
     const where: any = {
-      deletedAt: null
+      deletedAt: null,
     };
 
     if (status !== undefined) {
@@ -151,7 +153,7 @@ class UserModel {
     if (keyword) {
       where.OR = [
         { username: { contains: keyword } },
-        { phone: { contains: keyword } }
+        { phone: { contains: keyword } },
       ];
     }
 
@@ -165,17 +167,17 @@ class UserModel {
         status: true,
         createdAt: true,
         updatedAt: true,
-        password: true
+        password: true,
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       skip: (page - 1) * limit,
-      take: limit
+      take: limit,
     });
 
-    return users.map(user => ({
+    return users.map((user) => ({
       ...user,
       status: Boolean(user.status),
-          }));
+    }));
   }
 
   /**
@@ -183,14 +185,16 @@ class UserModel {
    * @param options - 查询选项
    * @returns 用户总数
    */
-  async count(options: {
-    status?: string;
-    keyword?: string;
-  } = {}): Promise<number> {
+  async count(
+    options: {
+      status?: string;
+      keyword?: string;
+    } = {}
+  ): Promise<number> {
     const { status, keyword } = options;
 
     const where: any = {
-      deletedAt: null
+      deletedAt: null,
     };
 
     if (status !== undefined) {
@@ -200,7 +204,7 @@ class UserModel {
     if (keyword) {
       where.OR = [
         { username: { contains: keyword } },
-        { phone: { contains: keyword } }
+        { phone: { contains: keyword } },
       ];
     }
 
@@ -213,10 +217,13 @@ class UserModel {
    * @param excludeId - 排除的用户ID
    * @returns 是否存在
    */
-  async isUsernameExists(username: string, excludeId?: number): Promise<boolean> {
+  async isUsernameExists(
+    username: string,
+    excludeId?: number
+  ): Promise<boolean> {
     const where: any = {
       username,
-      deletedAt: null
+      deletedAt: null,
     };
 
     if (excludeId) {
@@ -225,7 +232,7 @@ class UserModel {
 
     const user = await prisma.users.findFirst({
       where,
-      select: { id: true }
+      select: { id: true },
     });
 
     return !!user;
@@ -240,7 +247,7 @@ class UserModel {
   async isEmailExists(email: string, excludeId?: number): Promise<boolean> {
     const where: any = {
       email,
-      deletedAt: null
+      deletedAt: null,
     };
 
     if (excludeId) {
@@ -249,7 +256,7 @@ class UserModel {
 
     const user = await prisma.users.findFirst({
       where,
-      select: { id: true }
+      select: { id: true },
     });
 
     return !!user;
@@ -264,7 +271,7 @@ class UserModel {
   async isPhoneExists(phone: string, excludeId?: number): Promise<boolean> {
     const where: any = {
       phone,
-      deletedAt: null
+      deletedAt: null,
     };
 
     if (excludeId) {
@@ -273,7 +280,7 @@ class UserModel {
 
     const user = await prisma.users.findFirst({
       where,
-      select: { id: true }
+      select: { id: true },
     });
 
     return !!user;
@@ -291,7 +298,7 @@ class UserModel {
       data: {
         // lastLoginAt: new Date(),
         // ...(loginIp && { lastLoginIp: loginIp })
-      } as any
+      } as any,
     });
   }
 
@@ -324,16 +331,18 @@ class UserModel {
    * @param options - 查询选项
    * @returns 分页结果
    */
-  async findWithPagination(options: {
-    page?: number;
-    limit?: number;
-    status?: string;
-    keyword?: string;
-  } = {}) {
+  async findWithPagination(
+    options: {
+      page?: number;
+      limit?: number;
+      status?: string;
+      keyword?: string;
+    } = {}
+  ) {
     const { page = 1, limit = 10, status, keyword } = options;
 
     const where: any = {
-      deletedAt: null
+      deletedAt: null,
     };
 
     if (status !== undefined) {
@@ -343,7 +352,7 @@ class UserModel {
     if (keyword) {
       where.OR = [
         { username: { contains: keyword } },
-        { phone: { contains: keyword } }
+        { phone: { contains: keyword } },
       ];
     }
 
@@ -351,7 +360,7 @@ class UserModel {
       page,
       limit,
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         username: true,
@@ -360,22 +369,22 @@ class UserModel {
         status: true,
         createdAt: true,
         updatedAt: true,
-        password: true
-      }
+        password: true,
+      },
     });
 
     // 等待查询结果
     const [items, total] = await Promise.all([
       result.items,
-      prisma.users.count({ where })
+      prisma.users.count({ where }),
     ]);
 
     const totalPages = Math.ceil(total / limit);
 
     return {
-      items: items.map(user => ({
+      items: items.map((user) => ({
         ...user,
-        status: Boolean(user.status)
+        status: Boolean(user.status),
       })),
       pagination: {
         page,
@@ -383,8 +392,8 @@ class UserModel {
         total,
         pages: totalPages,
         hasNext: page < totalPages,
-        hasPrev: page > 1
-      }
+        hasPrev: page > 1,
+      },
     };
   }
 }

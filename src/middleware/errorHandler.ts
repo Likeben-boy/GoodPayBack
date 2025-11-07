@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import logger, { businessLogger, securityLogger } from '../utils/logger';
-import { ApiResponse, ValidationError } from '../types';
-import config from '../config';
+import { ApiResponse, HttpCode } from '../types';
+import config from '../config/index.js';
 
 // 自定义错误类
 export class AppError extends Error {
@@ -23,9 +23,6 @@ export class AppError extends Error {
  * 统一处理所有错误并返回标准化响应
  */
 const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction): void => {
-  // 增强的错误日志记录
-  console.log('youmeiyoudayin');
-  
   const errorContext = {
     error: err.message,
     stack: err.stack,
@@ -49,35 +46,12 @@ const errorHandler = (err: Error, req: Request, res: Response, next: NextFunctio
     businessLogger.warn('Business logic error', errorContext);
   }
 
-  // 数据库错误处理
-  if ((err as any).code === 'ER_DUP_ENTRY') {
-    const response: ApiResponse = {
-      status: 'error',
-      message: '数据已存在',
-      code: 'DUPLICATE_ENTRY',
-      timestamp: new Date().toISOString()
-    };
-    res.status(409).json(response);
-    return;
-  }
-
-  if ((err as any).code === 'ER_NO_REFERENCED_ROW_2') {
-    const response: ApiResponse = {
-      status: 'error',
-      message: '关联数据不存在',
-      code: 'FOREIGN_KEY_CONSTRAINT',
-      timestamp: new Date().toISOString()
-    };
-    res.status(400).json(response);
-    return;
-  }
-
   // JWT错误处理
   if (err.name === 'JsonWebTokenError') {
     const response: ApiResponse = {
       status: 'error',
       message: '无效的访问令牌',
-      code: 'INVALID_TOKEN',
+      code: HttpCode.INVALID_TOKEN,
       timestamp: new Date().toISOString()
     };
     res.status(401).json(response);
@@ -88,7 +62,7 @@ const errorHandler = (err: Error, req: Request, res: Response, next: NextFunctio
     const response: ApiResponse = {
       status: 'error',
       message: '访问令牌已过期',
-      code: 'TOKEN_EXPIRED',
+      code: HttpCode.TIME_OUT_TOKEN,
       timestamp: new Date().toISOString()
     };
     res.status(401).json(response);
@@ -100,31 +74,8 @@ const errorHandler = (err: Error, req: Request, res: Response, next: NextFunctio
     const response: ApiResponse = {
       status: 'error',
       message: '数据验证失败',
-      code: 'VALIDATION_ERROR',
+      code: HttpCode.VALIDATION_ERROR,
       errors: (err as any).details,
-      timestamp: new Date().toISOString()
-    };
-    res.status(400).json(response);
-    return;
-  }
-
-  // 文件上传错误
-  if ((err as any).code === 'LIMIT_FILE_SIZE') {
-    const response: ApiResponse = {
-      status: 'error',
-      message: '文件大小超出限制',
-      code: 'FILE_TOO_LARGE',
-      timestamp: new Date().toISOString()
-    };
-    res.status(400).json(response);
-    return;
-  }
-
-  if ((err as any).code === 'LIMIT_UNEXPECTED_FILE') {
-    const response: ApiResponse = {
-      status: 'error',
-      message: '不支持的文件类型',
-      code: 'INVALID_FILE_TYPE',
       timestamp: new Date().toISOString()
     };
     res.status(400).json(response);
@@ -136,35 +87,11 @@ const errorHandler = (err: Error, req: Request, res: Response, next: NextFunctio
     const response: ApiResponse = {
       status: 'error',
       message: err.message,
-      code: err.code,
+      code: err.code as HttpCode,
       details: err.details,
       timestamp: new Date().toISOString()
     };
     res.status(err.statusCode).json(response);
-    return;
-  }
-
-  // 404错误处理
-  if ((err as any).statusCode === 404) {
-    const response: ApiResponse = {
-      status: 'error',
-      message: err.message || '资源不存在',
-      code: 'NOT_FOUND',
-      timestamp: new Date().toISOString()
-    };
-    res.status(404).json(response);
-    return;
-  }
-
-  // 权限错误处理
-  if ((err as any).statusCode === 403) {
-    const response: ApiResponse = {
-      status: 'error',
-      message: err.message || '权限不足',
-      code: 'FORBIDDEN',
-      timestamp: new Date().toISOString()
-    };
-    res.status(403).json(response);
     return;
   }
 
@@ -175,7 +102,7 @@ const errorHandler = (err: Error, req: Request, res: Response, next: NextFunctio
   const response: ApiResponse = {
     status: 'error',
     message: statusCode === 500 ? '服务器内部错误' : message,
-    code: 'INTERNAL_ERROR',
+    code: HttpCode.INTERNAL_ERROR,
     timestamp: new Date().toISOString()
   };
 
@@ -191,8 +118,6 @@ const errorHandler = (err: Error, req: Request, res: Response, next: NextFunctio
  * 404错误处理中间件
  */
 const notFoundHandler = (req: Request, res: Response): void => {
-  console.log(111111);
-  
   // 记录404错误日志
   businessLogger.warn('Route not found', {
     url: req.url,
@@ -206,7 +131,7 @@ const notFoundHandler = (req: Request, res: Response): void => {
   const response: ApiResponse = {
     status: 'error',
     message: '路由不存在',
-    code: 'ROUTE_NOT_FOUND',
+    code: HttpCode.ROUTE_NOT_FOUND,
     timestamp: new Date().toISOString()
   };
   res.status(404).json(response);

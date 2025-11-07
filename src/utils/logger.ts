@@ -1,5 +1,5 @@
-import winston from 'winston';
-import config from '../config';
+import * as winston from 'winston';
+import config from '../config/index.js';
 
 // 常量配置
 const LOG_CONFIG = {
