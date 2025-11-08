@@ -67,13 +67,13 @@ class RestaurantController {
    */
   async getRestaurantDetail(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const { id } = req.query;
 
       if (!id) {
         throw new Error('餐厅ID不能为空');
       }
 
-      const restaurantId = parseInt(id);
+      const restaurantId = Number(id);
 
       if (isNaN(restaurantId)) {
         throw new Error('无效的餐厅ID');
@@ -116,13 +116,13 @@ class RestaurantController {
    */
   async getRestaurantMenu(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const { id } = req.query;
 
       if (!id) {
         throw new Error('餐厅ID不能为空');
       }
 
-      const restaurantId = parseInt(id);
+      const restaurantId = Number(id);
 
       if (isNaN(restaurantId)) {
         throw new Error('无效的餐厅ID');

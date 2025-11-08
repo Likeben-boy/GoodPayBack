@@ -32,7 +32,7 @@ router.get('/tags',
 );
 
 // 通过ID查询餐厅详情 (获取单一资源，使用路径参数是标准的 RESTful 设计)
-router.get('/',
+router.get('/id',
   validate(restaurantValidation.getRestaurantDetail),
   restaurantController.getRestaurantDetail
 );

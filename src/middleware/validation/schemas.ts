@@ -299,12 +299,12 @@ export const restaurantValidation = {
 
   // 获取餐厅详情
   getRestaurantDetail: [
-    param("id").notEmpty().isInt({ min: 1 }).withMessage("餐厅ID必须是大于0的整数"),
+    query("id").notEmpty()
   ],
 
   // 获取餐厅菜单
   getRestaurantMenu: [
-    param("id").notEmpty().isInt({ min: 1 }).withMessage("餐厅ID必须是大于0的整数"),
+    query("id").notEmpty()
   ],
 
   // 获取指定分类的菜品 (使用查询参数，符合 RESTful GET 请求设计)

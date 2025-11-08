@@ -10,7 +10,6 @@ import {
 import { PaginatedResponse } from '../../../types/index';
 
 interface MenuResult {
-  restaurant: Restaurant;
   categories: (DishCategory & { dishes: Dish[] })[];
 }
 
@@ -171,7 +170,6 @@ class RestaurantService {
     const categories = await this.restaurantModel.getDishCategories(restaurantId);
 
     return {
-      restaurant,
       categories
     };
   }

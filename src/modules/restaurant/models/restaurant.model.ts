@@ -59,16 +59,6 @@ class RestaurantModel {
       }
     });
 
-    // const restaurantss = await prisma.restaurants.findMany({
-    //   where:{
-    //     deletedAt:null,
-    //     status:true,
-    //     name: {contains:'name'}
-
-    //     }
-      
-    // });
-
     // 转换为实体类类型，处理Decimal类型转换
     return restaurants.map(restaurant => {
       const { deletedAt,restaurantTagRelations, ...rest } = restaurant;
@@ -94,6 +84,17 @@ class RestaurantModel {
         id,
         deletedAt: null,
         status: true
+      },
+            include:{
+        restaurantTagRelations:{
+          include:{
+            restaurantTag:{
+              select:{
+                tagName:true
+              }
+            }
+          }
+        }
       }
     });
 
@@ -102,11 +103,12 @@ class RestaurantModel {
     }
 
     // 转换为实体类类型，处理Decimal类型转换
-    const { deletedAt, ...rest } = restaurant;
+    const { deletedAt,restaurantTagRelations, ...rest } = restaurant;
     return {
       ...rest,
       rating: Number(restaurant.rating),
       deliveryFee: Number(restaurant.deliveryFee),
+              tags: restaurantTagRelations.map(relation => relation.restaurantTag.tagName),
       ...(deletedAt && { deletedAt })
     };
   }
