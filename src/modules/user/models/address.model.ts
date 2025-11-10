@@ -1,5 +1,5 @@
 import { prisma } from "@/database/prisma";
-import { CreateAddressInput, UpdateAddressInput } from "./user";
+import { CreateAddressInput, UpdateAddressInput,Address } from "./user";
 
 class AddressModel {
   /**
@@ -11,7 +11,7 @@ class AddressModel {
   async createAddress(
     userId: number,
     addressData: CreateAddressInput
-  ): Promise<any> {
+  ): Promise<Address> {
     // 如果设置为默认地址，需要先取消其他默认地址（只影响未删除的地址）
     if (addressData.isDefault) {
       await prisma.userAddresses.updateMany({
@@ -44,7 +44,7 @@ class AddressModel {
    * @param userId - 用户ID
    * @returns 地址列表
    */
-  async getUserAddresses(userId: number): Promise<any[]> {
+  async getUserAddresses(userId: number): Promise<Address[]> {
     return await prisma.userAddresses.findMany({
       where: {
         userId,
@@ -59,7 +59,7 @@ class AddressModel {
    * @param userId - 用户ID
    * @returns 默认地址
    */
-  async getDefaultAddress(userId: number): Promise<any | null> {
+  async getDefaultAddress(userId: number): Promise<Address | null> {
     return await prisma.userAddresses.findFirst({
       where: {
         userId,
@@ -78,7 +78,7 @@ class AddressModel {
   async findByIdAndUserId(
     addressId: number,
     userId: number
-  ): Promise<any | null> {
+  ): Promise<Address | null> {
     const address = await prisma.userAddresses.findFirst({
       where: {
         id: addressId,
@@ -102,7 +102,7 @@ class AddressModel {
     addressId: number,
     userId: number,
     updateData: UpdateAddressInput
-  ): Promise<any> {
+  ): Promise<Address> {
     const address = await this.findByIdAndUserId(addressId, userId);
 
     if (!address) {

@@ -79,7 +79,7 @@ class RestaurantModel {
    * @returns {Promise<Restaurant | null>}
    */
   async findById(id: number): Promise<Restaurant | null> {
-    const restaurant = await prisma.restaurants.findFirst({
+    const restaurant = await prisma.restaurants.findUnique({
       where: {
         id,
         deletedAt: null,
@@ -256,6 +256,44 @@ class RestaurantModel {
   }
 
   /**
+   * 根据ID和餐厅ID查询菜品
+   * @param dishId - 菜品ID
+   * @param restaurantId - 餐厅ID
+   * @returns 菜品信息
+   */
+  async findDishByIdAndRestaurant(dishId: number, restaurantId: number): Promise<any> {
+    const dish = await prisma.dishes.findFirst({
+      where: {
+        id: dishId,
+        restaurantId: restaurantId,
+        deletedAt: null,
+        status: true
+      }
+    });
+
+    return dish;
+  }
+
+  /**
+   * 批量查询菜品信息
+   * @param dishIds - 菜品ID数组
+   * @param restaurantId - 餐厅ID
+   * @returns 菜品信息列表
+   */
+  async findDishesByIds(dishIds: number[], restaurantId: number): Promise<any[]> {
+    const dishes = await prisma.dishes.findMany({
+      where: {
+        id: { in: dishIds },
+        restaurantId: restaurantId,
+        deletedAt: null,
+        status: true
+      }
+    });
+
+    return dishes;
+  }
+
+  /**
    * 获取餐厅标签列表
    * @param tagType 可选的标签类型筛选 (cuisine | feature | price_range | service)
    * @returns {Promise<RestaurantTag[]>}
@@ -289,13 +327,8 @@ class RestaurantModel {
       };
     });
   }
-
-  /**
-   * 关闭Prisma连接
-   */
-  disconnect(): Promise<void> {
-    return prisma.$disconnect();
-  }
 }
 
-export default RestaurantModel;
+// 导出单例实例
+const restaurantModel = new RestaurantModel();
+export default restaurantModel;

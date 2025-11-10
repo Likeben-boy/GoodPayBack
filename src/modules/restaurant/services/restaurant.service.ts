@@ -1,4 +1,4 @@
-import RestaurantModel from '../models/restaurant.model';
+import restaurantModel from '../models/restaurant.model';
 import {
   Restaurant,
   DishCategory,
@@ -14,19 +14,14 @@ interface MenuResult {
 }
 
 class RestaurantService {
-  private restaurantModel: RestaurantModel;
-
-  constructor() {
-    this.restaurantModel = new RestaurantModel();
-  }
 
   /**
    * 验证餐厅是否存在
    * @param restaurantId - 餐厅ID
    * @returns {Promise<{exists: boolean, restaurant?: Restaurant}>}
    */
-  private async validateRestaurantExists(restaurantId: number): Promise<{ exists: boolean; restaurant?: Restaurant }> {
-    const restaurant = await this.restaurantModel.findById(restaurantId);
+  public async validateRestaurantExists(restaurantId: number): Promise<{ exists: boolean; restaurant?: Restaurant }> {
+    const restaurant = await restaurantModel.findById(restaurantId);
     if (restaurant) {
       return { exists: true, restaurant };
     }
@@ -114,13 +109,13 @@ class RestaurantService {
     }
 
     const [restaurants, total] = await Promise.all([
-      this.restaurantModel.findMany({
+      restaurantModel.findMany({
         where,
         orderBy,
         skip,
         take
       }),
-      this.restaurantModel.count(where)
+      restaurantModel.count(where)
     ]);
 
     const currentPage = Number(page);
@@ -167,7 +162,7 @@ class RestaurantService {
     }
 
     // 获取菜品分类和菜品
-    const categories = await this.restaurantModel.getDishCategories(restaurantId);
+    const categories = await restaurantModel.getDishCategories(restaurantId);
 
     return {
       categories
@@ -188,7 +183,7 @@ class RestaurantService {
     }
 
     // 获取分类下的菜品
-    const dishes = await this.restaurantModel.getDishesByCategory(categoryId);
+    const dishes = await restaurantModel.getDishesByCategory(categoryId);
 
     return {
       restaurantId,
@@ -211,7 +206,7 @@ class RestaurantService {
       }
     }
 
-    const tags = this.restaurantModel.getRestaurantTags(tagType);
+    const tags = restaurantModel.getRestaurantTags(tagType);
     return tags;
   }
 }

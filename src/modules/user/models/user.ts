@@ -92,10 +92,10 @@ export interface Address {
   id: number;
   /** 所属用户ID */
   userId: number;
-  /** 收件人姓名 */
-  recipient: string;
-  /** 收件人手机号码 */
-  phone: string;
+  /** 联系人姓名 */
+  contactName: string;
+  /** 联系人手机号码 */
+  contactPhone: string;
   /** 省份 */
   province: string;
   /** 城市 */
@@ -103,9 +103,7 @@ export interface Address {
   /** 区县 */
   district: string;
   /** 详细地址 */
-  detailedAddress: string;
-  /** 邮政编码，可选 */
-  postalCode?: string | null | undefined;
+  detailAddress: string;
   /** 是否为默认地址 */
   isDefault: boolean;
   /** 创建时间 */
@@ -113,7 +111,7 @@ export interface Address {
   /** 更新时间 */
   updatedAt: Date;
   /** 软删除时间 */
-  deletedAt?: Date | null;
+  deleteAt?: Date | null;
 }
 
 /**
@@ -142,10 +140,10 @@ export interface CreateAddressInput {
  * 更新地址请求参数接口
  */
 export interface UpdateAddressInput {
-  /** 收件人姓名，可选 */
-  recipient?: string;
-  /** 收件人手机号码，可选 */
-  phone?: string;
+  /** 联系人姓名，可选 */
+  contactName?: string;
+  /** 联系人手机号码，可选 */
+  contactPhone?: string;
   /** 省份，可选 */
   province?: string;
   /** 城市，可选 */
@@ -153,9 +151,7 @@ export interface UpdateAddressInput {
   /** 区县，可选 */
   district?: string;
   /** 详细地址，可选 */
-  detailedAddress?: string;
-  /** 邮政编码，可选 */
-  postalCode?: string;
+  detailAddress?: string;
   /** 是否设为默认地址，可选 */
   isDefault?: boolean;
 }

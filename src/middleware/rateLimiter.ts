@@ -92,14 +92,14 @@ const smsLimiter: RateLimitRequestHandler = createRateLimiter({
 });
 
 /**
- * 文件上传限流中间件
+ * 下单限流中间件
  */
-const uploadLimiter: RateLimitRequestHandler = createRateLimiter({
+const orderLimiter: RateLimitRequestHandler = createRateLimiter({
   windowMs: 60 * 1000, // 1分钟
-  max: 10, // 最多10次
-  message: '文件上传过于频繁，请1分钟后再试',
+  max: 15, // 最多15次
+  message: '下订单请求过于频繁，请1分钟后再试',
   code: HttpCode.RATE_LIMIT_EXCEEDED,
-  prefix: 'upload_limit:'
+  prefix: 'order_limit:'
 });
 
 /**
@@ -148,7 +148,7 @@ export {
   registerLimiter,
   passwordResetLimiter,
   smsLimiter,
-  uploadLimiter,
+  orderLimiter,
   paymentLimiter,
   createLimiter
 };
