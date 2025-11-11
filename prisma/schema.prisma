@@ -93,17 +93,16 @@ model Dishes {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model OrderItems {
-  id           Int      @id @default(autoincrement())
-  orderId      Int      @map("order_id")
-  dishId       Int      @map("dish_id")
-  dishName     String   @map("dish_name") @db.VarChar(100)
-  dishImage    String?  @map("dish_image") @db.VarChar(255)
-  dishPrice    Decimal  @map("dish_price") @db.Decimal(8, 2)
-  quantity     Int      @default(1)
-  selectedSpec String?  @map("selected_spec") @db.VarChar(100)
-  subtotal     Decimal  @db.Decimal(10, 2)
-  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(0)
-  orders       Orders   @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "order_items_orders_FK")
+  id        Int      @id @default(autoincrement())
+  orderId   Int      @map("order_id")
+  dishId    Int      @map("dish_id")
+  dishName  String   @map("dish_name") @db.VarChar(100)
+  dishImage String?  @map("dish_image") @db.VarChar(255)
+  dishPrice Decimal  @map("dish_price") @db.Decimal(8, 2)
+  quantity  Int      @default(1)
+  subtotal  Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  orders    Orders   @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "order_items_orders_FK")
 
   @@index([dishId], map: "idx_dish_id")
   @@index([orderId], map: "idx_order_id")
@@ -179,9 +178,9 @@ model Orders {
   completedAt           DateTime?             @map("completed_at") @db.DateTime(0)
   cancelledAt           DateTime?             @map("cancelled_at") @db.DateTime(0)
   cancelReason          String?               @map("cancel_reason") @db.VarChar(255)
-  orderItems           OrderItems[]
-  orderReviews         OrderReviews?
-  orderStatusLogs     OrderStatusLogs[]
+  orderItems            OrderItems[]
+  orderReviews          OrderReviews?
+  orderStatusLogs       OrderStatusLogs[]
 
   @@index([createdAt], map: "idx_created_at")
   @@index([orderNumber], map: "idx_order_number")

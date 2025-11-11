@@ -301,21 +301,34 @@ class OrderService {
       };
     }
 
-    // 步骤2: 创建支付记录
-    // 2.1 生成第三方交易ID（模拟）
+    // 步骤2: 创建支付记录 目前使用balance时为挡板支付
+    let paymentResult;
+
+          // 创建支付记录
+      const paymentRecord = await orderModel.createPaymentRecord({
+        orderId: payOrder.orderId,
+        userId,
+        paymentMethod: payOrder.paymentMethod,
+        paymentAmount: order.total,
+        transactionId: paymentData.transactionId,
+        paymentStatus: PaymentStatus.SUCCESS,
+      });
+    if (payOrder.paymentMethod === PaymentMethod.BALANCE) {
+          // 2.1 生成第三方交易ID（模拟）
     const transactionId = `TXN${Date.now()}${Math.floor(Math.random() * 1000)
       .toString()
       .padStart(3, "0")}`;
 
     // 2.2 调用第三方支付接口（模拟）
     // 这里应该调用实际的支付SDK，如微信支付、支付宝等
-    const paymentResult = await this.processPayment({
+    paymentResult = await this.processPayment({
       orderId: payOrder.orderId,
       userId: userId,
       amount: order.totalAmount,
       paymentMethod: payOrder.paymentMethod,
       transactionId: transactionId,
-    });
+    }); 
+    }
 
     // 步骤3: 更新订单状态和支付记录
     if (paymentResult.success) {
@@ -383,15 +396,7 @@ class OrderService {
     const success = Math.random() > 0.1; // 90%成功率
 
     if (success) {
-      // 创建支付记录
-      const paymentRecord = await orderModel.createPaymentRecord({
-        orderId: paymentData.orderId,
-        userId: paymentData.userId,
-        paymentMethod: paymentData.paymentMethod,
-        paymentAmount: paymentData.amount,
-        transactionId: paymentData.transactionId,
-        paymentStatus: PaymentStatus.SUCCESS,
-      });
+
 
       return {
         success: true,

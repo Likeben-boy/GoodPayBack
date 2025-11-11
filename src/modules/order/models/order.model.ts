@@ -49,8 +49,8 @@ class OrderModel {
    * @param id - 订单ID
    * @returns 订单信息
    */
-  async findById(id: number): Promise<any | null> {
-    const order = await (prisma as any).orders.findFirst({
+  async findById(id: number): Promise<Order | null> {
+    const order = await prisma.orders.findUnique({
       where: { id },
       include: {
         orderItems: true,
@@ -62,7 +62,13 @@ class OrderModel {
 
     if (!order) return null;
 
-    return order;
+  // 显式转换枚举类型
+  return {
+    ...order,
+    orderStatus: order.orderStatus as OrderStatus,
+    paymentStatus: order.paymentStatus as PaymentStatus,
+    paymentMethod: order.paymentMethod as PaymentMethod,
+  };
   }
 
   /**
@@ -260,9 +266,6 @@ class OrderModel {
     const [orders, total] = await Promise.all([
       prisma.orders.findMany({
         where: where,
-        include: {
-          orderItems: true
-        },
         orderBy: {
           createdAt: 'desc'
         },

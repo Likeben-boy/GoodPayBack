@@ -1,4 +1,5 @@
 // 订单相关类型定义
+import { Decimal } from 'decimal.js';
 
 /**
  * 订单状态枚举（对应数据库 orders_order_status）
@@ -61,35 +62,35 @@ export interface Order {
   /** 支付方式 */
   paymentMethod: PaymentMethod;
   /** 商品小计金额 */
-  subtotal: number;
+  subtotal: Decimal;
   /** 配送费 */
-  deliveryFee: number;
+  deliveryFee: Decimal;
   /** 优惠金额 */
-  discountAmount?: number;
+  discountAmount?: Decimal;
   /** 订单总金额 */
-  totalAmount: number;
+  totalAmount: Decimal;
   /** 优惠券ID，可选 */
-  couponId?: number;
+  couponId?: number | null;
   /** 订单备注，可选 */
-  orderNote?: string;
+  orderNote?: string | null;
   /** 期望送达时间，可选 */
-  deliveryTime?: string;
+  deliveryTime?: string | null;
   /** 预计送达时间，可选 */
-  estimatedDeliveryTime?: Date;
+  estimatedDeliveryTime?: Date | null;
   /** 实际送达时间，可选 */
-  actualDeliveryTime?: Date;
+  actualDeliveryTime?: Date | null;
   /** 创建时间 */
-  createdAt?: Date;
+  createdAt?: Date | null;
   /** 更新时间 */
-  updatedAt?: Date;
+  updatedAt?: Date | null;
   /** 支付时间，可选 */
-  paidAt?: Date;
+  paidAt?: Date  | null;
   /** 完成时间，可选 */
-  completedAt?: Date;
+  completedAt?: Date  | null;
   /** 取消时间，可选 */
-  cancelledAt?: Date;
+  cancelledAt?: Date  | null;
   /** 取消原因，可选 */
-  cancelReason?: string;
+  cancelReason?: string  | null;
 
   //订单菜品详细信息项
   orderItems: OrderItem[];
@@ -108,15 +109,13 @@ export interface OrderItem {
   /** 菜品名称（冗余存储） */
   dishName: string;
   /** 菜品图片URL（冗余存储），可选 */
-  dishImage?: string;
+  dishImage?: string | null;
   /** 下单时菜品单价 */
-  dishPrice: number;
+  dishPrice: Decimal;
   /** 菜品数量 */
   quantity: number;
-  /** 选择的菜品规格，可选 */
-  selectedSpec?: string;
   /** 小计金额 */
-  subtotal: number;
+  subtotal: Decimal;
   /** 创建时间 */
   createdAt?: Date;
 }
@@ -147,8 +146,6 @@ export interface CreateOrderItemInput {
   dishId: number;
   /** 菜品数量 */
   quantity: number;
-  /** 选择的菜品规格，可选 */
-  selectedSpec?: string;
 }
 
 // ==================== 下单接口请求参数实体类 ====================
