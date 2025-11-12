@@ -5,7 +5,7 @@ import config from '../config/index.js';
 const LOG_CONFIG = {
   LEVEL: config.logLevel,
   LOG_FILE: config.logFile,
-  ERROR_FILE: 'error.log',
+  ERROR_FILE: config.errorLogFile,
   SERVICE_NAME: 'user-service',
   TIMESTAMP_FORMAT: 'YYYY-MM-DD HH:mm:ss.SSS',
   EXCLUDED_META_FIELDS: ['service', 'label'],

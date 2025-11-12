@@ -42,6 +42,7 @@ interface AppConfig {
   smsSignName: string;
   logLevel: string;
   logFile: string;
+  errorLogFile:String;
   rateLimitWindowMs: number;
   rateLimitMaxRequests: number;
   bcryptSaltRounds: number;
@@ -97,6 +98,7 @@ const config: AppConfig = {
   // 日志配置
   logLevel: process.env.LOG_LEVEL || 'info',
   logFile: process.env.LOG_FILE || 'logs/app.log',
+  errorLogFile: process.env.ERROR_LOG_FILE || 'logs/error.log',
 
   // 限流配置
   rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15分钟
