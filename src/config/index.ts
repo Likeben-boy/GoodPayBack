@@ -42,7 +42,7 @@ interface AppConfig {
   smsSignName: string;
   logLevel: string;
   logFile: string;
-  errorLogFile:String;
+  errorLogFile:string;
   rateLimitWindowMs: number;
   rateLimitMaxRequests: number;
   bcryptSaltRounds: number;
