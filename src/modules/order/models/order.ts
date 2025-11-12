@@ -610,22 +610,6 @@ export interface GetOrderStatisticsRequest {
 }
 
 /**
- * 订单统计响应数据接口
- */
-export interface GetOrderStatisticsResponse {
-  /** 总订单数 */
-  totalOrders: number;
-  /** 已完成订单数 */
-  completedOrders: number;
-  /** 已取消订单数 */
-  cancelledOrders: number;
-  /** 总订单金额 */
-  totalAmount: number;
-  /** 平均订单金额 */
-  averageAmount: number;
-}
-
-/**
  * 订单状态统计请求参数接口
  */
 export interface GetOrderStatusCountRequest {
@@ -741,14 +725,6 @@ export interface CreateOrderReviewResponse {
   rating: number;
   /** 评价时间 */
   createdAt: Date;
-}
-
-/**
- * 获取订单评价列表请求参数接口
- */
-export interface GetOrderReviewsRequest {
-  /** 订单ID */
-  orderId: number;
 }
 
 /**

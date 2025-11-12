@@ -3,7 +3,7 @@ import orderService from '../services/order.service';
 import { successResponse, errorResponse } from '../../../utils/response';
 import logger, { businessLogger, securityLogger } from '../../../utils/logger';
 import { HttpCode } from '@/types/index';
-import { OrderStatus } from '../models/order';
+import { OrderStatus, GetOrderHistoryRequest } from '../models/order';
 
 class OrderController {
   /**
@@ -306,11 +306,14 @@ class OrderController {
   async getOrderHistory(req: Request, res: Response): Promise<void> {
     try {
       const { startDate, endDate, type } = req.query;
-      const options = {
+      const options: GetOrderHistoryRequest = {
         startDate: startDate as string,
-        endDate: endDate as string,
-        type: type
+        endDate: endDate as string
       };
+
+      if (type && typeof type === 'string' && ['daily', 'weekly', 'monthly'].includes(type)) {
+        options.type = type as 'daily' | 'weekly' | 'monthly';
+      }
 
       const result = await orderService.getOrderHistory(req.user!.userId, options);
 

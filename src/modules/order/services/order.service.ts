@@ -10,14 +10,12 @@ import {
   GetOrderListRequest,
   GetOrderDetailResponse,
   GetOrderStatisticsRequest,
-  GetOrderStatisticsResponse,
   GetOrderStatusCountRequest,
   GetOrderStatusCountResponse,
   GetOrderHistoryRequest,
   GetOrderHistoryResponse,
   CreateOrderReviewRequest,
   CreateOrderReviewResponse,
-  GetOrderReviewsRequest,
   GetOrderReviewsResponse,
   GetDeliveryInfoResponse,
   OrderItem,
@@ -1035,16 +1033,16 @@ class OrderService {
    * @returns 评价列表
    */
   async getOrderReviews(
-    params: GetOrderReviewsRequest,
+    orderId: number,
     userId: number
   ): Promise<GetOrderReviewsResponse> {
     businessLogger.info("开始获取订单评价列表", {
-      orderId: params.orderId,
+      orderId: orderId,
       userId,
     });
 
     // 步骤1: 校验订单信息
-    const order = await orderModel.findById(params.orderId);
+    const order = await orderModel.findById(orderId);
     if (!order) {
       throw { message: "订单不存在", code: HttpCode.NOT_FOUND };
     }
@@ -1053,7 +1051,7 @@ class OrderService {
     }
 
     // 步骤2: 查询评价列表
-    const reviews = await orderModel.getOrderReviews(params.orderId);
+    const reviews = await orderModel.getOrderReviews(orderId);
 
     // 步骤3: 计算统计信息
     const total = reviews.length;
@@ -1064,7 +1062,7 @@ class OrderService {
         : 0;
 
     businessLogger.info("获取订单评价列表成功", {
-      orderId: params.orderId,
+      orderId: orderId,
       userId: userId,
       total: total,
       averageRating: averageRating,
