@@ -6,8 +6,7 @@ import { userValidation } from '../../../middleware/validation/schemas';
 import {
   loginLimiter,
   registerLimiter,
-  passwordResetLimiter,
-  uploadLimiter
+  passwordResetLimiter
 } from '../../../middleware/rateLimiter';
 import { businessLogger, securityLogger } from '../../../utils/logger';
 

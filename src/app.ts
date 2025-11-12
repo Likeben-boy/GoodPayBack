@@ -14,7 +14,6 @@ import orderRoutes from "./modules/order/routes/order.routes";
 // 导入中间件
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { generalLimiter } from "./middleware/rateLimiter";
-import { numberConverterMiddleware } from "./middleware/numberConverter";
 
 // 导入工具
 import { ApiResponse, HttpCode } from "./types";
