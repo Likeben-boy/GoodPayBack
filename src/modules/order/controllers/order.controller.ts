@@ -57,7 +57,7 @@ class OrderController {
         ip: req.ip
       });
 
-      const result = await orderService.payOrder(req.body, req.user!.userId);
+      const result = await orderService.payOrder(req.body.orderId, req.user!.userId);
 
       businessLogger.info('订单支付成功', {
         userId: req.user?.userId,
@@ -139,6 +139,33 @@ class OrderController {
     }
   }
 
+    /**
+   * 修改订单状态,模拟商家发货和骑手送到
+   * @param req - 请求对象
+   * @param res - 响应对象
+   */
+  async changeStatus(req: Request, res: Response): Promise<void> {
+    try {
+      const { orderId, status } = req.body;
+
+      // 将字符串转换为 OrderStatus 枚举
+      const orderStatus = status as OrderStatus;
+
+      const result = await orderService.changeStatus(orderId, orderStatus, req.user!.userId);
+      successResponse(res, '修改订单状态成功', result);
+    } catch (error: any) {
+      logger.error('修改订单状态失败', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.user?.userId,
+        orderId: req.query.orderId,
+        ip: req.ip,
+        code: error.code || HttpCode.INTERNAL_ERROR
+      });
+      errorResponse(res, error.message, 400, error.code || HttpCode.INTERNAL_ERROR);
+    }
+  }
+
   /**
    * 确认收货
    * @param req - 请求对象
@@ -204,8 +231,10 @@ class OrderController {
    */
   async getOrderDetail(req: Request, res: Response): Promise<void> {
     try {
+
       const { orderId } = req.query;
-      if (!orderId) {
+      if (!orderId || orderId == null) {
+        console.log('Debug - orderId is null or undefined');
         throw new Error('订单ID不能为空');
       }
 
@@ -357,35 +386,6 @@ class OrderController {
   }
 
   /**
-   * 重新下单（复制历史订单）
-   * @param req - 请求对象
-   * @param res - 响应对象
-   */
-  async reorder(req: Request, res: Response): Promise<void> {
-    try {
-      businessLogger.info('用户重新下单', {
-        userId: req.user?.userId,
-        originalOrderId: req.body.originalOrderId,
-        ip: req.ip
-      });
-
-      const result = await orderService.reorder(req.body.originalOrderId, req.user!.userId);
-
-      successResponse(res, '重新下单成功', result, 200);
-    } catch (error: any) {
-      logger.error('重新下单失败', {
-        error: error.message,
-        stack: error.stack,
-        userId: req.user?.userId,
-        originalOrderId: req.body.originalOrderId,
-        ip: req.ip,
-        code: error.code || HttpCode.INTERNAL_ERROR
-      });
-      errorResponse(res, error.message, 400, error.code || HttpCode.INTERNAL_ERROR);
-    }
-  }
-
-  /**
    * 获取订单配送信息
    * @param req - 请求对象
    * @param res - 响应对象
@@ -402,63 +402,6 @@ class OrderController {
       successResponse(res, '获取配送信息成功', result);
     } catch (error: any) {
       logger.error('获取配送信息失败', {
-        error: error.message,
-        stack: error.stack,
-        userId: req.user?.userId,
-        orderId: req.query.orderId,
-        ip: req.ip,
-        code: error.code || HttpCode.INTERNAL_ERROR
-      });
-      errorResponse(res, error.message, 400, error.code || HttpCode.INTERNAL_ERROR);
-    }
-  }
-
-  /**
-   * 申请发票
-   * @param req - 请求对象
-   * @param res - 响应对象
-   */
-  async requestInvoice(req: Request, res: Response): Promise<void> {
-    try {
-      businessLogger.info('用户申请发票', {
-        userId: req.user?.userId,
-        orderId: req.body.orderId,
-        ip: req.ip
-      });
-
-      const result = await orderService.requestInvoice(req.body, req.user!.userId);
-
-      successResponse(res, '发票申请成功', result, 200);
-    } catch (error: any) {
-      logger.error('发票申请失败', {
-        error: error.message,
-        stack: error.stack,
-        userId: req.user?.userId,
-        orderId: req.body.orderId,
-        ip: req.ip,
-        code: error.code || HttpCode.INTERNAL_ERROR
-      });
-      errorResponse(res, error.message, 400, error.code || HttpCode.INTERNAL_ERROR);
-    }
-  }
-
-  /**
-   * 获取发票信息
-   * @param req - 请求对象
-   * @param res - 响应对象
-   */
-  async getInvoiceInfo(req: Request, res: Response): Promise<void> {
-    try {
-      const { orderId } = req.query;
-      if (!orderId) {
-        throw new Error('订单ID不能为空');
-      }
-
-      const result = await orderService.getInvoiceInfo(Number(orderId), req.user!.userId);
-
-      successResponse(res, '获取发票信息成功', result);
-    } catch (error: any) {
-      logger.error('获取发票信息失败', {
         error: error.message,
         stack: error.stack,
         userId: req.user?.userId,

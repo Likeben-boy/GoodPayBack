@@ -257,6 +257,21 @@ export const orderValidation = {
       .isLength({ max: 200 })
       .withMessage("取消原因长度不能超过200个字符"),
   ],
+    changeStatus: [
+    // 取消订单使用body参数，符合我们的路由设计
+    body("orderId")
+      .notEmpty()
+      .isInt({ min: 1 })
+      .withMessage("订单ID必须是大于0的整数"),
+    body("status")
+      .optional()
+      .isIn([
+        "preparing",
+        "delivering",
+        "completed"
+      ])
+      .withMessage("订单状态无效"),
+  ],
 
   // 订单支付验证 - 用于处理订单支付请求
   payOrder: [
@@ -264,28 +279,7 @@ export const orderValidation = {
     body("orderId")
       .notEmpty()
       .isInt({ min: 1 })
-      .withMessage("订单ID必须是大于0的整数"),
-    // 支付方式 - 必填，支持微信、支付宝、余额支付、苹果支付
-    body("paymentMethod")
-      .trim()
-      .notEmpty()
-      .isIn(["wechat", "alipay", "balance", "apple"])
-      .withMessage("支付方式必须是wechat、alipay、balance或apple"),
-    // 支付金额 - 必填，用于二次校验金额准确性
-    body("amount")
-      .notEmpty()
-      .isFloat({ min: 0.01, max: 99999 })
-      .withMessage("支付金额必须在0.01-99999之间"),
-    // 支付密码 - 可选，余额支付时需要
-    body("payPassword")
-      .optional()
-      .isLength({ min: 6, max: 6 })
-      .withMessage("支付密码必须是6位数字"),
-    // 优惠券ID - 可选，使用优惠券时传递
-    body("couponId")
-      .optional()
-      .isInt({ min: 1 })
-      .withMessage("优惠券ID必须是大于0的整数"),
+      .withMessage("订单ID必须是大于0的整数")
   ],
 
   // 订单退款验证 - 用于处理订单退款申请
@@ -299,24 +293,8 @@ export const orderValidation = {
     body("reason")
       .trim()
       .notEmpty()
-      .isLength({ min: 5, max: 500 })
+      .isLength({ min: 1, max: 500 })
       .withMessage("退款原因长度必须在5-500个字符之间"),
-    // 退款金额 - 必填，支持部分退款
-    body("refundAmount")
-      .notEmpty()
-      .isFloat({ min: 0.01, max: 99999 })
-      .withMessage("退款金额必须在0.01-99999之间"),
-    // 退款类型 - 可选，全额退款或部分退款
-    body("refundType")
-      .optional()
-      .isIn(["full", "partial"])
-      .withMessage("退款类型必须是full或partial"),
-    // 退款说明 - 可选，补充说明退款详情
-    body("description")
-      .optional()
-      .trim()
-      .isLength({ max: 1000 })
-      .withMessage("退款说明长度不能超过1000个字符"),
   ],
 
   // 获取订单列表验证 - 支持分页和状态筛选

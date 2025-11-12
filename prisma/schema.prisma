@@ -137,8 +137,7 @@ model OrderReviews {
 model OrderStatusLogs {
   id           Int                              @id @default(autoincrement())
   orderId      Int                              @map("order_id")
-  oldStatus    String?                          @map("old_status") @db.VarChar(20)
-  newStatus    String                           @map("new_status") @db.VarChar(20)
+  newStatus    order_status_logs_new_status     @map("new_status")
   operatorId   Int?                             @map("operator_id")
   operatorType order_status_logs_operator_type? @default(system) @map("operator_type")
   remark       String?                          @db.VarChar(255)
@@ -156,6 +155,7 @@ model Orders {
   orderNumber           String                @unique(map: "order_number") @map("order_number") @db.VarChar(32)
   userId                Int                   @map("user_id")
   restaurantId          Int                   @map("restaurant_id")
+  restaurantName       String               @db.VarChar(100) @map("restaurant_name")
   addressId             Int                   @map("address_id")
   contactName           String                @map("contact_name") @db.VarChar(50)
   contactPhone          String                @map("contact_phone") @db.VarChar(20)
@@ -181,6 +181,7 @@ model Orders {
   orderItems            OrderItems[]
   orderReviews          OrderReviews?
   orderStatusLogs       OrderStatusLogs[]
+  paymentRecords        PaymentRecords[]
 
   @@index([createdAt], map: "idx_created_at")
   @@index([orderNumber], map: "idx_order_number")
@@ -198,12 +199,13 @@ model PaymentRecords {
   userId        Int                            @map("user_id")
   paymentMethod payment_records_payment_method @map("payment_method")
   paymentAmount Decimal                        @map("payment_amount") @db.Decimal(10, 2)
-  transactionId String?                        @map("transaction_id") @db.VarChar(100)
+  transactionId String                         @map("transaction_id") @db.VarChar(100)
   paymentStatus payment_records_payment_status @default(pending) @map("payment_status")
   paymentTime   DateTime?                      @map("payment_time") @db.DateTime(0)
   failureReason String?                        @map("failure_reason") @db.VarChar(255)
   createdAt     DateTime                       @default(now()) @map("created_at") @db.DateTime(0)
   updatedAt     DateTime                       @default(now()) @map("updated_at") @db.DateTime(0)
+  orders        Orders                         @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "payment_records_orders_FK")
 
   @@index([orderId], map: "idx_order_id")
   @@index([paymentStatus], map: "idx_payment_status")
@@ -222,7 +224,6 @@ model RefundRecords {
   refundReason        String                         @map("refund_reason") @db.VarChar(255)
   refundType          refund_records_refund_type     @default(full) @map("refund_type")
   refundStatus        refund_records_refund_status   @default(pending) @map("refund_status")
-  refundMethod        refund_records_refund_method?  @default(original) @map("refund_method")
   refundTransactionId String?                        @map("refund_transaction_id") @db.VarChar(100)
   processorId         Int?                           @map("processor_id")
   processorType       refund_records_processor_type? @default(system) @map("processor_type")
@@ -413,11 +414,6 @@ enum orders_order_status {
   cancelled
 }
 
-enum refund_records_refund_method {
-  original
-  balance
-}
-
 enum order_reviews_status {
   published
   hidden
@@ -457,4 +453,13 @@ enum restaurant_tag_tag_type {
   feature
   price_range
   service
+}
+
+enum order_status_logs_new_status {
+  created
+  confirmed
+  preparing
+  delivering
+  completed
+  cancelled
 }

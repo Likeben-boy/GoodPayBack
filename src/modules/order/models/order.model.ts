@@ -1,19 +1,19 @@
 import { prisma } from "@/database/prisma";
-import { payment_records_payment_method, payment_records_payment_status } from "@prisma/client";
-import { Order, PaymentStatus, PaymentMethod, OrderStatus } from "./order";
-
-interface CreateOrderData {
-  userId: number;
-  restaurantId: number;
-  addressId: number;
-  items: any[];
-  paymentMethod: string;
-  deliveryTime?: string;
-  note?: string;
-  subtotal: number;
-  deliveryFee: number;
-  total: number;
-}
+import {
+  payment_records_payment_method,
+  payment_records_payment_status,
+} from "@prisma/client";
+import {
+  Order,
+  PaymentStatus,
+  PaymentMethod,
+  OrderStatus,
+  PaymentRecord,
+  RefundRecord,
+  OrderPaymentStatus,
+  RefundStatus,
+} from "./order";
+import { HttpCode } from "@/types/index";
 
 class OrderModel {
   /**
@@ -22,24 +22,49 @@ class OrderModel {
    * @returns 创建的订单信息
    */
   async create(orderData: Order): Promise<number> {
-      const resultOrder = await prisma.orders.create({
-        data: {...orderData,
-          orderItems:{
-            create: orderData.orderItems
+    // 显式构建数据对象，避免 exactOptionalPropertyTypes 错误
+    const createData: any = {
+      orderNumber: orderData.orderNumber,
+      userId: orderData.userId,
+      restaurantId: orderData.restaurantId,
+      restaurantName: orderData.restaurantName,
+      addressId: orderData.addressId,
+      contactName: orderData.contactName,
+      contactPhone: orderData.contactPhone,
+      deliveryAddress: orderData.deliveryAddress,
+      orderStatus: orderData.orderStatus,
+      paymentStatus: orderData.paymentStatus,
+      paymentMethod: orderData.paymentMethod,
+      estimatedDeliveryTime: orderData.estimatedDeliveryTime,
+      subtotal: orderData.subtotal,
+      deliveryFee: orderData.deliveryFee,
+      totalAmount: orderData.totalAmount,
+      orderItems: {
+        create: orderData.orderItems,
+      },
+      orderStatusLogs: {
+        create: [
+          {
+            newStatus: orderData.orderStatus,
+            operatorId: orderData.userId,
+            operatorType: "user",
+            remark: "创建订单",
           },
-          orderStatusLogs:{
-            create: [{
-              newStatus:'创建订单',
-              operatorId:orderData.userId,
-              operatorType:'user'
-            }]
-          }
-        },
-        include:{
-          orderItems:true,
-          orderStatusLogs:true
-        }
-      });
+        ],
+      },
+    };
+
+    if (orderData.orderNote) {
+      createData.orderNote = orderData.orderNote;
+    }
+
+    const resultOrder = await prisma.orders.create({
+      data: createData,
+      include: {
+        orderItems: true,
+        orderStatusLogs: true,
+      },
+    });
 
     return resultOrder.id;
   }
@@ -55,20 +80,20 @@ class OrderModel {
       include: {
         orderItems: true,
         orderStatusLogs: {
-          orderBy: { createdAt: 'desc' }
-        }
-      }
+          orderBy: { createdAt: "desc" },
+        },
+      },
     });
 
     if (!order) return null;
 
-  // 显式转换枚举类型
-  return {
-    ...order,
-    orderStatus: order.orderStatus as OrderStatus,
-    paymentStatus: order.paymentStatus as PaymentStatus,
-    paymentMethod: order.paymentMethod as PaymentMethod,
-  };
+    // 显式转换枚举类型
+    return {
+      ...order,
+      orderStatus: order.orderStatus as OrderStatus,
+      paymentStatus: order.paymentStatus as OrderPaymentStatus,
+      paymentMethod: order.paymentMethod as PaymentMethod,
+    };
   }
 
   /**
@@ -77,11 +102,14 @@ class OrderModel {
    * @param options - 查询选项
    * @returns 订单列表
    */
-  async findByUserId(userId: number, options: {
-    skip?: number;
-    take?: number;
-    status?: string;
-  } = {}): Promise<any[]> {
+  async findByUserId(
+    userId: number,
+    options: {
+      skip?: number;
+      take?: number;
+      status?: string;
+    } = {}
+  ): Promise<any[]> {
     const { skip = 0, take = 10, status } = options;
 
     const where: any = { userId };
@@ -94,12 +122,12 @@ class OrderModel {
       include: {
         orderItems: true,
         orderStatusLogs: {
-          orderBy: { createdAt: 'desc' }
-        }
+          orderBy: { createdAt: "desc" },
+        },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       skip,
-      take
+      take,
     });
 
     return orders;
@@ -121,6 +149,52 @@ class OrderModel {
   }
 
   /**
+   * 更新订单状态,支付调用事务
+   * @param orderId - 订单ID
+   * @param status - 新状态
+   * @param operatorId - 操作者ID
+   * @param remark - 备注
+   */
+  async updateStatusWithPay(
+    orderId: number,
+    payId: number,
+    orderStatus: OrderStatus,
+    orderpaymentStatus: OrderPaymentStatus,
+    payStatus: PaymentStatus,
+    operatorId?: number,
+    remark?: string
+  ): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      // 更新订单状态
+      await tx.orders.update({
+        where: { id: orderId },
+        data: {
+          orderStatus: orderStatus,
+          paymentStatus: orderpaymentStatus,
+          paidAt: payStatus === PaymentStatus.SUCCESS ? new Date() : null,
+        },
+      });
+
+      //更新支付状态
+      await tx.paymentRecords.update({
+        where: { id: payId },
+        data: { paymentStatus: payStatus, paymentTime: new Date() },
+      });
+
+      // 创建状态变更日志
+      await tx.orderStatusLogs.create({
+        data: {
+          orderId,
+          newStatus: orderStatus,
+          operatorId: operatorId || null,
+          operatorType: operatorId ? "user" : "system",
+          remark: remark || `状态变更为: ${orderStatus}`,
+        },
+      });
+    });
+  }
+
+  /**
    * 更新订单状态
    * @param orderId - 订单ID
    * @param status - 新状态
@@ -129,36 +203,94 @@ class OrderModel {
    */
   async updateStatus(
     orderId: number,
-    status: string,
+    status: OrderStatus,
     operatorId?: number,
     remark?: string
   ): Promise<void> {
     await prisma.$transaction(async (tx) => {
-      // 获取当前订单状态
-      const order = await (tx as any).orders.findFirst({
-        where: { id: orderId }
-      });
+      const updateData: any = {
+        orderStatus: status,
+      };
 
-      if (!order) {
-        throw new Error("订单不存在");
+      switch (status) {
+        case OrderStatus.PREPARING:
+          break;
+
+        //如果切换为配送状态,则更新商家完成时间
+        case OrderStatus.DELIVERING:
+          updateData.completedAt = new Date();
+          break;
+
+        //如果切换为已完成,则更新实际配送时间
+        case OrderStatus.COMPLETED:
+          updateData.actualDeliveryTime = new Date();
+          break;
+
+        //如果是取消的话,则更新取消时间
+        case OrderStatus.CANCELLED:
+          updateData.cancelledAt = new Date();
+          break;
+        default:
+          throw { message: "不支持的状态修改", code: HttpCode.FORBIDDEN };
       }
 
       // 更新订单状态
-      await (tx as any).orders.update({
+      await tx.orders.update({
         where: { id: orderId },
-        data: { orderStatus: status }
+        data: updateData,
       });
 
       // 创建状态变更日志
-      await (tx as any).orderStatusLogs.create({
+      await tx.orderStatusLogs.create({
         data: {
           orderId,
-          oldStatus: order.orderStatus,
           newStatus: status,
           operatorId: operatorId || null,
           operatorType: operatorId ? "user" : "system",
           remark: remark || `状态变更为: ${status}`,
-        }
+        },
+      });
+    });
+  }
+
+  /**
+   * 更新订单状态,与退款有关
+   * @param orderId - 订单ID
+   * @param status - 新状态
+   * @param operatorId - 操作者ID
+   * @param remark - 备注
+   */
+  async updateStatusWithRefund(
+    orderId: number,
+    refundId: number,
+    orderStatus: OrderStatus,
+    orderPaymentStatus: OrderPaymentStatus,
+    refundStatus: RefundStatus,
+    operatorId?: number,
+    remark?: string
+  ): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      // 更新订单状态
+      await tx.orders.update({
+        where: { id: orderId },
+        data: { orderStatus: orderStatus, paymentStatus: orderPaymentStatus },
+      });
+
+      //更新支付状态
+      await tx.refundRecords.update({
+        where: { id: refundId },
+        data: { refundStatus: refundStatus },
+      });
+
+      // 创建状态变更日志
+      await tx.orderStatusLogs.create({
+        data: {
+          orderId,
+          newStatus: orderStatus,
+          operatorId: operatorId || null,
+          operatorType: operatorId ? "user" : "system",
+          remark: remark || `状态变更为: ${orderStatus}`,
+        },
       });
     });
   }
@@ -168,33 +300,17 @@ class OrderModel {
    * @param paymentData - 支付记录数据
    * @returns 支付记录
    */
-  async createPaymentRecord(paymentData: {
-    orderId: number;
-    userId: number;
-    paymentMethod: PaymentMethod;
-    paymentAmount: number;
-    transactionId: string;
-    paymentStatus: PaymentStatus;
-  }): Promise<any> {
-    // 转换枚举类型到Prisma枚举
-    const prismaPaymentMethod = this.convertPaymentMethod(paymentData.paymentMethod);
-    const prismaPaymentStatus = this.convertPaymentStatus(paymentData.paymentStatus);
-
-    const paymentRecord = await prisma.paymentRecords.create({
+  async createPaymentRecord(paymentRecord: PaymentRecord): Promise<number> {
+    const result = await prisma.paymentRecords.create({
       data: {
-        orderId: paymentData.orderId,
-        userId: paymentData.userId,
-        paymentMethod: prismaPaymentMethod,
-        paymentAmount: paymentData.paymentAmount,
-        transactionId: paymentData.transactionId,
-        paymentStatus: prismaPaymentStatus,
-        paymentTime: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
+        orderId: paymentRecord.orderId,
+        userId: paymentRecord.userId,
+        paymentMethod: paymentRecord.paymentMethod,
+        paymentAmount: paymentRecord.paymentAmount,
+        transactionId: paymentRecord.transactionId,
+      },
     });
-
-    return paymentRecord;
+    return result.id;
   }
 
   /**
@@ -203,13 +319,24 @@ class OrderModel {
    * @param paymentStatus - 支付状态
    * @returns 支付记录
    */
-  async findPaymentRecord(orderId: number, paymentStatus: payment_records_payment_status): Promise<any> {
-    return await prisma.paymentRecords.findFirst({
+  async findPaymentRecord(
+    orderId: number,
+    paymentStatus: PaymentStatus
+  ): Promise<PaymentRecord | null> {
+    const result = await prisma.paymentRecords.findFirst({
       where: {
         orderId: orderId,
-        paymentStatus: paymentStatus
-      }
+        paymentStatus: paymentStatus,
+      },
     });
+    // 显式转换枚举类型
+    if (!result) return null;
+
+    return {
+      ...result,
+      paymentStatus: result.paymentStatus as PaymentStatus,
+      paymentMethod: result.paymentMethod as PaymentMethod,
+    };
   }
 
   /**
@@ -217,14 +344,7 @@ class OrderModel {
    * @param refundData - 退款记录数据
    * @returns 退款记录
    */
-  async createRefundRecord(refundData: {
-    orderId: number;
-    userId: number;
-    paymentRecordId: number;
-    refundAmount: number;
-    refundReason: string;
-    refundType: string;
-  }): Promise<any> {
+  async createRefundRecord(refundData: RefundRecord): Promise<number> {
     const refundRecord = await prisma.refundRecords.create({
       data: {
         orderId: refundData.orderId,
@@ -232,15 +352,54 @@ class OrderModel {
         paymentRecordId: refundData.paymentRecordId,
         refundAmount: refundData.refundAmount,
         refundReason: refundData.refundReason,
-        refundType: refundData.refundType === 'full' ? 'full' : 'partial',
-        refundStatus: 'pending',
-        processorType: 'system',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
+        refundType: refundData.refundType,
+        refundStatus: refundData.refundStatus,
+        processorType: refundData.processorType,
+      },
     });
 
-    return refundRecord;
+    return refundRecord.id;
+  }
+
+  /**
+   * 修改退款记录,只做普通更新,不涉及联动其他数据
+   * @param refundData - 退款记录数据
+   * @returns 退款记录
+   */
+  async updateRefundRecordStatus(
+    refundId: number,
+    refundStatus: RefundStatus
+  ): Promise<number> {
+    const refundRecord = await prisma.refundRecords.update({
+      data: {
+        refundStatus: refundStatus,
+      },
+      where: {
+        id: refundId,
+      },
+    });
+
+    return refundRecord.id;
+  }
+
+  /**
+   * 修改支付记录,只做普通更新,不涉及联动其他数据
+   * @param refundData - 退款记录数据
+   * @returns 退款记录
+   */
+  async updatePayRecordStatus(
+    paymentId: number,
+    paymentStatus: PaymentStatus
+  ): Promise<number> {
+    const refundRecord = await prisma.paymentRecords.update({
+      data: {
+        paymentStatus: paymentStatus,
+      },
+      where: {
+        id: paymentId,
+      },
+    });
+    return refundRecord.id;
   }
 
   /**
@@ -249,11 +408,14 @@ class OrderModel {
    * @param options - 查询选项
    * @returns 订单列表和总数
    */
-  async getOrderListWithPagination(userId: number, options: {
-    page?: number;
-    limit?: number;
-    status?: OrderStatus;
-  }): Promise<{ orders: any[], total: number }> {
+  async getOrderListWithPagination(
+    userId: number,
+    options: {
+      page?: number;
+      limit?: number;
+      status?: OrderStatus;
+    }
+  ): Promise<{ orders: any[]; total: number }> {
     const page = options.page || 1;
     const limit = options.limit || 10;
     const skip = (page - 1) * limit;
@@ -267,12 +429,15 @@ class OrderModel {
       prisma.orders.findMany({
         where: where,
         orderBy: {
-          createdAt: 'desc'
+          createdAt: "desc",
         },
         skip: skip,
-        take: limit
+        take: limit,
+        include: {
+          orderItems: true,
+        },
       }),
-      prisma.orders.count({ where: where })
+      prisma.orders.count({ where: where }),
     ]);
 
     return { orders, total };
@@ -284,16 +449,19 @@ class OrderModel {
    * @param userId - 用户ID
    * @returns 订单详情
    */
-  async getOrderDetailWithRelations(orderId: number, userId: number): Promise<any> {
+  async getOrderDetailWithRelations(
+    orderId: number,
+    userId: number
+  ): Promise<any> {
     const order = await prisma.orders.findFirst({
       where: {
         id: orderId,
-        userId: userId
+        userId: userId,
       },
       include: {
         orderItems: true,
-        orderReviews: true
-      }
+        orderReviews: true,
+      },
     });
 
     return order;
@@ -306,11 +474,15 @@ class OrderModel {
    * @param endDate - 结束日期
    * @returns 统计信息
    */
-  async getOrderStatistics(userId: number, startDate?: Date, endDate?: Date): Promise<{
-    totalOrders: number;
-    completedOrders: number;
-    cancelledOrders: number;
-    totalAmount: number;
+  async getOrderStatistics(
+    userId: number,
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<{
+    totalOrders: number;      // 用户所有订单数量
+    pendingPaymentOrders: number;  // 用户待支付的订单数量(订单状态为created)
+    deliveringOrders: number;  // 正在配送中的订单数量(订单状态为delivering)
+    completedOrders: number;   // 用户已经收货的订单数量(订单状态为completed)
   }> {
     const where: any = { userId: userId };
 
@@ -324,32 +496,25 @@ class OrderModel {
       }
     }
 
-    const [
-      totalOrders,
-      completedOrders,
-      cancelledOrders,
-      totalAmountResult
-    ] = await Promise.all([
-      prisma.orders.count({ where }),
-      prisma.orders.count({
-        where: { ...where, orderStatus: OrderStatus.COMPLETED }
-      }),
-      prisma.orders.count({
-        where: { ...where, orderStatus: OrderStatus.CANCELLED }
-      }),
-      prisma.orders.aggregate({
-        where: { ...where, orderStatus: OrderStatus.COMPLETED },
-        _sum: { totalAmount: true }
-      })
-    ]);
-
-    const totalAmount = Number(totalAmountResult._sum.totalAmount || 0);
+    const [totalOrders, pendingPaymentOrders, deliveringOrders, completedOrders] =
+      await Promise.all([
+        prisma.orders.count({ where }),
+        prisma.orders.count({
+          where: { ...where, orderStatus: OrderStatus.CREATED },
+        }),
+        prisma.orders.count({
+          where: { ...where, orderStatus: OrderStatus.DELIVERING },
+        }),
+        prisma.orders.count({
+          where: { ...where, orderStatus: OrderStatus.COMPLETED },
+        }),
+      ]);
 
     return {
       totalOrders,
+      pendingPaymentOrders,
+      deliveringOrders,
       completedOrders,
-      cancelledOrders,
-      totalAmount
     };
   }
 
@@ -360,7 +525,11 @@ class OrderModel {
    * @param endDate - 结束日期
    * @returns 状态统计
    */
-  async getOrderStatusCount(userId: number, startDate?: Date, endDate?: Date): Promise<{
+  async getOrderStatusCount(
+    userId: number,
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<{
     created: number;
     confirmed: number;
     preparing: number;
@@ -386,26 +555,26 @@ class OrderModel {
       preparingCount,
       deliveringCount,
       completedCount,
-      cancelledCount
+      cancelledCount,
     ] = await Promise.all([
       prisma.orders.count({
-        where: { ...baseWhere, orderStatus: OrderStatus.CREATED }
+        where: { ...baseWhere, orderStatus: OrderStatus.CREATED },
       }),
       prisma.orders.count({
-        where: { ...baseWhere, orderStatus: OrderStatus.CONFIRMED }
+        where: { ...baseWhere, orderStatus: OrderStatus.CONFIRMED },
       }),
       prisma.orders.count({
-        where: { ...baseWhere, orderStatus: OrderStatus.PREPARING }
+        where: { ...baseWhere, orderStatus: OrderStatus.PREPARING },
       }),
       prisma.orders.count({
-        where: { ...baseWhere, orderStatus: OrderStatus.DELIVERING }
+        where: { ...baseWhere, orderStatus: OrderStatus.DELIVERING },
       }),
       prisma.orders.count({
-        where: { ...baseWhere, orderStatus: OrderStatus.COMPLETED }
+        where: { ...baseWhere, orderStatus: OrderStatus.COMPLETED },
       }),
       prisma.orders.count({
-        where: { ...baseWhere, orderStatus: OrderStatus.CANCELLED }
-      })
+        where: { ...baseWhere, orderStatus: OrderStatus.CANCELLED },
+      }),
     ]);
 
     return {
@@ -414,7 +583,7 @@ class OrderModel {
       preparing: preparingCount,
       delivering: deliveringCount,
       completed: completedCount,
-      cancelled: cancelledCount
+      cancelled: cancelledCount,
     };
   }
 
@@ -426,7 +595,12 @@ class OrderModel {
    * @param groupByFormat - 分组格式
    * @returns 历史统计
    */
-  async getOrderHistory(userId: number, startDate: Date, endDate: Date, groupByFormat: string): Promise<any[]> {
+  async getOrderHistory(
+    userId: number,
+    startDate: Date,
+    endDate: Date,
+    groupByFormat: string
+  ): Promise<any[]> {
     const historyQuery = `
       SELECT
         DATE_FORMAT(createdAt, '${groupByFormat}') as date,
@@ -472,8 +646,8 @@ class OrderModel {
         content: reviewData.content,
         images: reviewData.images,
         createdAt: new Date(),
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     });
 
     return review;
@@ -489,8 +663,8 @@ class OrderModel {
     return await prisma.orderReviews.findFirst({
       where: {
         orderId: orderId,
-        userId: userId
-      }
+        userId: userId,
+      },
     });
   }
 
@@ -502,11 +676,11 @@ class OrderModel {
   async getOrderReviews(orderId: number): Promise<any[]> {
     const reviews = await prisma.orderReviews.findMany({
       where: {
-        orderId: orderId
+        orderId: orderId,
       },
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: "desc",
+      },
     });
 
     return reviews;
@@ -520,8 +694,8 @@ class OrderModel {
   async getDeliveryInfo(orderId: number): Promise<any> {
     return await prisma.deliveryInfo.findUnique({
       where: {
-        orderId: orderId
-      }
+        orderId: orderId,
+      },
     });
   }
 
@@ -530,31 +704,16 @@ class OrderModel {
    * @param method - 支付方式
    * @returns Prisma支付方式枚举
    */
-  private convertPaymentMethod(method: PaymentMethod): payment_records_payment_method {
+  private convertPaymentMethod(
+    method: PaymentMethod
+  ): payment_records_payment_method {
     const mapping = {
       [PaymentMethod.WECHAT]: payment_records_payment_method.wechat,
       [PaymentMethod.ALIPAY]: payment_records_payment_method.alipay,
       [PaymentMethod.BALANCE]: payment_records_payment_method.balance,
-      [PaymentMethod.APPLE]: payment_records_payment_method.apple
+      [PaymentMethod.APPLE]: payment_records_payment_method.apple,
     };
     return mapping[method];
-  }
-
-  /**
-   * 转换支付状态枚举到Prisma枚举
-   * @param status - 支付状态
-   * @returns Prisma支付状态枚举
-   */
-  private convertPaymentStatus(status: PaymentStatus): payment_records_payment_status {
-    const mapping = {
-      [PaymentStatus.PENDING]: payment_records_payment_status.pending,
-      [PaymentStatus.PROCESSING]: payment_records_payment_status.processing,
-      [PaymentStatus.SUCCESS]: payment_records_payment_status.success,
-      [PaymentStatus.FAILED]: payment_records_payment_status.failed,
-      [PaymentStatus.REFUNDING]: payment_records_payment_status.pending,
-      [PaymentStatus.REFUNDED]: payment_records_payment_status.success
-    };
-    return mapping[status];
   }
 }
 

@@ -14,9 +14,19 @@ export enum OrderStatus {
 }
 
 /**
- * 支付状态枚举（对应数据库 orders_payment_status）
+ * 支付状态枚举（对应数据库 payment_status）
  */
 export enum PaymentStatus {
+  PENDING = 'pending',       // 待支付
+  PROCESSING = 'processing', // 支付中
+  SUCCESS = 'success',       // 支付成功
+  FAILED = 'failed',         // 支付失败
+}
+
+/**
+ * 支付状态枚举（对应数据库 orders_payment_status）
+ */
+export enum OrderPaymentStatus {
   PENDING = 'pending',       // 待支付
   PROCESSING = 'processing', // 支付中
   SUCCESS = 'success',       // 支付成功
@@ -47,6 +57,8 @@ export interface Order {
   userId: number;
   /** 餐厅ID */
   restaurantId: number;
+    /** 餐厅名称 */
+  restaurantName: string;
   /** 收货地址ID */
   addressId: number;
   /** 联系人姓名 */
@@ -58,7 +70,7 @@ export interface Order {
   /** 订单状态 */
   orderStatus: OrderStatus;
   /** 支付状态 */
-  paymentStatus: PaymentStatus;
+  paymentStatus: OrderPaymentStatus;
   /** 支付方式 */
   paymentMethod: PaymentMethod;
   /** 商品小计金额 */
@@ -76,7 +88,7 @@ export interface Order {
   /** 期望送达时间，可选 */
   deliveryTime?: string | null;
   /** 预计送达时间，可选 */
-  estimatedDeliveryTime?: Date | null;
+  estimatedDeliveryTime: Date | null;
   /** 实际送达时间，可选 */
   actualDeliveryTime?: Date | null;
   /** 创建时间 */
@@ -88,9 +100,9 @@ export interface Order {
   /** 完成时间，可选 */
   completedAt?: Date  | null;
   /** 取消时间，可选 */
-  cancelledAt?: Date  | null;
+  cancelledAt?: Date | null;
   /** 取消原因，可选 */
-  cancelReason?: string  | null;
+  cancelReason?: string | null;
 
   //订单菜品详细信息项
   orderItems: OrderItem[];
@@ -118,34 +130,6 @@ export interface OrderItem {
   subtotal: Decimal;
   /** 创建时间 */
   createdAt?: Date;
-}
-
-/**
- * 创建订单请求参数接口
- */
-export interface CreateOrderInput {
-  /** 收货地址ID */
-  addressId: number;
-  /** 订单项列表 */
-  items: CreateOrderItemInput[];
-  /** 支付方式 */
-  paymentMethod: PaymentMethod;
-  /** 订单备注，可选 */
-  orderNote?: string;
-  /** 优惠券ID，可选 */
-  couponId?: number;
-  /** 期望送达时间，可选 */
-  deliveryTime?: string;
-}
-
-/**
- * 创建订单项请求参数接口
- */
-export interface CreateOrderItemInput {
-  /** 菜品ID */
-  dishId: number;
-  /** 菜品数量 */
-  quantity: number;
 }
 
 // ==================== 下单接口请求参数实体类 ====================
@@ -235,25 +219,6 @@ export interface PlaceOrderErrorResponse {
   code: string;
   /** 验证错误列表，可选 */
   errors?: OrderValidationError[];
-}
-
-/**
- * 下单数据预处理接口
- * 用于前端在提交前对数据进行验证和处理
- */
-export interface OrderDataProcessor {
-  /** 验证订单数据 */
-  validateOrder(orderData: PlaceOrderRequest): OrderValidationError[];
-  /** 计算订单金额 */
-  calculateTotal(items: OrderDishItem[], deliveryFee: number): {
-    subtotal: number;
-    deliveryFee: number;
-    total: number;
-  };
-  /** 格式化支付方式 */
-  formatPaymentMethod(method: PaymentMethod): string;
-  /** 验证送达时间 */
-  validateDeliveryTime(deliveryTime: string): boolean;
 }
 
 /**
@@ -401,26 +366,6 @@ export interface OrderStatusLog {
 }
 
 /**
- * 支付记录支付方式枚举（对应数据库 payment_records_payment_method）
- */
-export enum PaymentRecordsPaymentMethod {
-  WECHAT = 'wechat',    // 微信支付
-  ALIPAY = 'alipay',    // 支付宝
-  BALANCE = 'balance',  // 余额支付
-  APPLE = 'apple'       // Apple Pay
-}
-
-/**
- * 支付记录支付状态枚举（对应数据库 payment_records_payment_status）
- */
-export enum PaymentRecordsPaymentStatus {
-  PENDING = 'pending',       // 待支付
-  PROCESSING = 'processing', // 支付中
-  SUCCESS = 'success',       // 支付成功
-  FAILED = 'failed'          // 支付失败
-}
-
-/**
  * 支付记录实体接口（对应数据库 payment_records 表）
  */
 export interface PaymentRecord {
@@ -431,21 +376,21 @@ export interface PaymentRecord {
   /** 用户ID */
   userId: number;
   /** 支付方式 */
-  paymentMethod: PaymentRecordsPaymentMethod;
+  paymentMethod: PaymentMethod;
   /** 支付金额 */
-  paymentAmount: number;
+  paymentAmount: Decimal;
   /** 第三方交易ID，可选 */
-  transactionId?: string;
+  transactionId: string;
   /** 支付状态 */
-  paymentStatus: PaymentRecordsPaymentStatus;
+  paymentStatus: PaymentStatus;
   /** 支付时间，可选 */
-  paymentTime?: Date;
+  paymentTime?: Date | null;
   /** 支付失败原因，可选 */
-  failureReason?: string;
+  failureReason?: string | null;
   /** 创建时间 */
-  createdAt: Date;
+  createdAt?: Date;
   /** 更新时间 */
-  updatedAt: Date;
+  updatedAt?: Date;
 }
 
 /**
@@ -465,14 +410,6 @@ export enum RefundStatus {
   REJECTED = 'rejected', // 已拒绝
   COMPLETED = 'completed', // 已完成
   FAILED = 'failed'      // 退款失败
-}
-
-/**
- * 退款方式枚举（对应数据库 refund_records_refund_method）
- */
-export enum RefundMethod {
-  ORIGINAL = 'original', // 原路退回
-  BALANCE = 'balance'    // 退回余额
 }
 
 /**
@@ -497,15 +434,13 @@ export interface RefundRecord {
   /** 支付记录ID */
   paymentRecordId: number;
   /** 退款金额 */
-  refundAmount: number;
+  refundAmount: Decimal;
   /** 退款原因 */
   refundReason: string;
   /** 退款类型 */
   refundType: RefundType;
   /** 退款状态 */
   refundStatus: RefundStatus;
-  /** 退款方式，可选 */
-  refundMethod?: RefundMethod;
   /** 退款交易ID，可选 */
   refundTransactionId?: string;
   /** 处理人ID，可选 */
@@ -565,16 +500,6 @@ export interface DeliveryInfo {
 // ==================== 支付相关接口 ====================
 
 /**
- * 支付订单请求参数接口
- */
-export interface PayOrderRequest {
-  /** 订单ID */
-  orderId: number;
-  /** 支付方式 */
-  paymentMethod: PaymentMethod;
-}
-
-/**
  * 支付订单响应数据接口
  */
 export interface PayOrderResponse {
@@ -585,7 +510,7 @@ export interface PayOrderResponse {
   /** 支付方式 */
   paymentMethod: PaymentMethod;
   /** 支付金额 */
-  paymentAmount: number;
+  paymentAmount: Decimal;
   /** 第三方交易ID，可选 */
   transactionId?: string;
   /** 支付状态 */
@@ -602,8 +527,6 @@ export interface RefundOrderRequest {
   orderId: number;
   /** 退款原因 */
   reason: string;
-  /** 退款金额，可选（默认全额退款） */
-  amount?: number;
 }
 
 /**
@@ -615,7 +538,7 @@ export interface RefundOrderResponse {
   /** 订单ID */
   orderId: number;
   /** 退款金额 */
-  refundAmount: number;
+  refundAmount: Decimal;
   /** 退款状态 */
   refundStatus: RefundStatus;
   /** 退款类型 */
@@ -623,14 +546,6 @@ export interface RefundOrderResponse {
 }
 
 // ==================== 确认收货相关接口 ====================
-
-/**
- * 确认收货请求参数接口
- */
-export interface ConfirmOrderRequest {
-  /** 订单ID */
-  orderId: number;
-}
 
 /**
  * 确认收货响应数据接口
@@ -849,14 +764,6 @@ export interface GetOrderReviewsResponse {
 }
 
 // ==================== 配送信息相关接口 ====================
-
-/**
- * 获取配送信息请求参数接口
- */
-export interface GetDeliveryInfoRequest {
-  /** 订单ID */
-  orderId: number;
-}
 
 /**
  * 获取配送信息响应数据接口

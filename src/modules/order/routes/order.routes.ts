@@ -38,6 +38,12 @@ router.post('/cancel',
   orderController.cancelOrder
 );
 
+// 4. 改变订单状态(模拟商家接单和骑手配送和商品送达)
+router.post('/changeStatus',
+  validate(orderValidation.changeStatus),
+  orderController.changeStatus
+);
+
 // 5. 确认收货
 router.post('/confirm',
   orderController.confirmOrder
@@ -79,11 +85,6 @@ router.post('/review',
 // 12. 获取订单评价列表
 router.get('/reviews',
   orderController.getOrderReviews
-);
-
-// 13. 重新下单（复制历史订单）
-router.post('/reorder',
-  orderController.reorder
 );
 
 // 14. 获取订单配送信息

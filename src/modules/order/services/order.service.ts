@@ -1,13 +1,11 @@
-import { payment_records_payment_status } from "@prisma/client";
 import { dbLogger, businessLogger } from "@/utils/logger";
+import Decimal from "decimal.js";
 import {
   PlaceOrderRequest,
   PlaceOrderResponse,
-  PayOrderRequest,
   PayOrderResponse,
   RefundOrderRequest,
   RefundOrderResponse,
-  ConfirmOrderRequest,
   ConfirmOrderResponse,
   GetOrderListRequest,
   GetOrderDetailResponse,
@@ -21,7 +19,6 @@ import {
   CreateOrderReviewResponse,
   GetOrderReviewsRequest,
   GetOrderReviewsResponse,
-  GetDeliveryInfoRequest,
   GetDeliveryInfoResponse,
   OrderItem,
   Order,
@@ -30,12 +27,17 @@ import {
   PaymentMethod,
   RefundType,
   OrderHistoryItem,
+  OrderPaymentStatus,
+  RefundRecord,
+  RefundStatus,
+  ProcessorType,
 } from "@/modules/order/models/order";
 import { PaginatedResponse } from "@/types/index";
 import orderModel from "../models/order.model";
 import restaurantModel from "@/modules/restaurant/models/restaurant.model";
 import addressModel from "@/modules/user/models/address.model";
 import { HttpCode } from "@/types/index";
+import { error } from "console";
 
 class OrderService {
   /**
@@ -73,14 +75,16 @@ class OrderService {
     }
 
     // 1.2 校验配送费是否与餐厅设置一致
-    if (placeOrder.deliveryFee !== restaurantResult.deliveryFee) {
+    const expectedDeliveryFee = new Decimal(restaurantResult.deliveryFee);
+    const receivedDeliveryFee = new Decimal(placeOrder.deliveryFee);
+    if (!receivedDeliveryFee.equals(expectedDeliveryFee)) {
       businessLogger.warn("配送费不匹配", {
-        expected: restaurantResult.deliveryFee,
+        expected: expectedDeliveryFee.toNumber(),
         received: placeOrder.deliveryFee,
         restaurantId: placeOrder.restaurantId,
       });
       throw {
-        message: `配送费不匹配，应为 ${restaurantResult.deliveryFee} 元`,
+        message: `配送费不匹配，应为 ${expectedDeliveryFee.toNumber()} 元`,
         code: HttpCode.VALIDATION_ERROR,
       };
     }
@@ -100,7 +104,7 @@ class OrderService {
 
     // 步骤3: 校验菜品信息并构建订单项
     const validatedDishes: OrderItem[] = [];
-    let calculatedSubtotal = 0;
+    let calculatedSubtotal = new Decimal(0);
 
     for (const item of placeOrder.items) {
       // 3.1 查询菜品是否存在且属于指定餐厅
@@ -121,16 +125,19 @@ class OrderService {
       }
 
       // 3.2 校验菜品价格是否与数据库一致
-      const dishPrice = Number(dish.price);
-      if (item.price !== dishPrice) {
+      const dishPrice = dish.price;
+      const itemPrice = new Decimal(item.price);
+      if (!itemPrice.equals(dishPrice)) {
         businessLogger.warn("菜品价格不匹配", {
           dishId: item.id,
           dishName: item.name,
-          expected: dishPrice,
+          expected: dishPrice.toNumber(),
           received: item.price,
         });
         throw {
-          message: `菜品 "${item.name}" 价格不匹配，应为 ${dishPrice} 元`,
+          message: `菜品 "${
+            item.name
+          }" 价格不匹配，应为 ${dishPrice.toNumber()} 元`,
           code: HttpCode.VALIDATION_ERROR,
         };
       }
@@ -144,44 +151,46 @@ class OrderService {
       }
 
       // 3.4 构建订单项数据（用于存储到 order_items 表）
+      const itemSubtotal = dishPrice.times(item.quantity);
       const orderItem: OrderItem = {
         dishId: item.id,
         dishName: item.name,
         dishImage: item.image,
-        dishPrice: item.price,
+        dishPrice: dishPrice,
         quantity: item.quantity,
-        subtotal: item.price * item.quantity,
+        subtotal: itemSubtotal,
         createdAt: new Date(),
       };
 
       validatedDishes.push(orderItem);
-      calculatedSubtotal += item.price * item.quantity;
+      calculatedSubtotal = calculatedSubtotal.plus(itemSubtotal);
     }
 
     // 步骤4: 校验订单金额
     // 4.1 校验商品小计金额
-    if (placeOrder.subtotal !== calculatedSubtotal) {
+    const calculatedSubtotalNumber = calculatedSubtotal.toNumber();
+    if (placeOrder.subtotal !== calculatedSubtotalNumber) {
       businessLogger.warn("商品小计金额不正确", {
-        expected: calculatedSubtotal,
+        expected: calculatedSubtotalNumber,
         received: placeOrder.subtotal,
       });
       throw {
-        message: `商品小计金额不正确，应为 ${calculatedSubtotal} 元`,
+        message: `商品小计金额不正确，应为 ${calculatedSubtotalNumber} 元`,
         code: HttpCode.VALIDATION_ERROR,
       };
     }
 
     // 4.2 校验订单总金额
-    const calculatedTotal = calculatedSubtotal + placeOrder.deliveryFee;
-    if (placeOrder.total !== calculatedTotal) {
+    const calculatedTotal = calculatedSubtotal.plus(placeOrder.deliveryFee);
+    if (placeOrder.total !== calculatedTotal.toNumber()) {
       businessLogger.warn("订单总金额不正确", {
-        expected: calculatedTotal,
+        expected: calculatedTotal.toNumber(),
         received: placeOrder.total,
-        subtotal: calculatedSubtotal,
+        subtotal: calculatedSubtotalNumber,
         deliveryFee: placeOrder.deliveryFee,
       });
       throw {
-        message: `订单总金额不正确，应为 ${calculatedTotal} 元`,
+        message: `订单总金额不正确，应为 ${calculatedTotal.toNumber()} 元`,
         code: HttpCode.VALIDATION_ERROR,
       };
     }
@@ -230,17 +239,18 @@ class OrderService {
       orderNumber: this.generateOrderNumber(),
       userId,
       restaurantId: placeOrder.restaurantId,
+      restaurantName: restaurantResult.name,
       addressId: placeOrder.addressId,
       contactName: addressResult.contactName,
       contactPhone: addressResult.contactPhone,
       deliveryAddress: `${addressResult.province} ${addressResult.city} ${addressResult.district} ${addressResult.detailAddress}`,
       orderStatus: OrderStatus.CREATED,
-      paymentStatus: PaymentStatus.PENDING,
+      paymentStatus: OrderPaymentStatus.PENDING,
       paymentMethod: placeOrder.paymentMethod,
       subtotal: calculatedSubtotal,
-      deliveryFee: placeOrder.deliveryFee,
-      totalAmount: calculatedTotal,
-      orderNote: placeOrder.note || "",
+      deliveryFee: new Decimal(placeOrder.deliveryFee),
+      totalAmount: calculatedSubtotal.plus(placeOrder.deliveryFee),
+      orderNote: placeOrder.note ?? null,
       //TODO 优惠卷暂时不做
       estimatedDeliveryTime: deliveryTime,
       orderItems: validatedDishes,
@@ -271,18 +281,15 @@ class OrderService {
    * @param userId - 用户ID
    * @returns 支付结果
    */
-  async payOrder(
-    payOrder: PayOrderRequest,
-    userId: number
-  ): Promise<PayOrderResponse> {
+  async payOrder(orderId: number, userId: number): Promise<PayOrderResponse> {
     businessLogger.info("开始执行订单支付", {
-      orderId: payOrder.orderId,
+      orderId,
       userId,
     });
 
     // 步骤1: 校验订单信息
     // 1.1 查询订单是否存在且属于当前用户
-    const order = await orderModel.findById(payOrder.orderId);
+    const order = await orderModel.findById(orderId);
     if (!order) {
       throw { message: "订单不存在", code: HttpCode.NOT_FOUND };
     }
@@ -294,7 +301,7 @@ class OrderService {
     if (order.orderStatus !== OrderStatus.CREATED) {
       throw { message: "订单状态不允许支付", code: HttpCode.VALIDATION_ERROR };
     }
-    if (order.paymentStatus !== PaymentStatus.PENDING) {
+    if (order.paymentStatus !== OrderPaymentStatus.PENDING) {
       throw {
         message: "订单已支付或支付状态异常",
         code: HttpCode.VALIDATION_ERROR,
@@ -302,71 +309,85 @@ class OrderService {
     }
 
     // 步骤2: 创建支付记录 目前使用balance时为挡板支付
-    let paymentResult;
+    let paymentResult = {
+      status: "pending",
+      message: "",
+    };
 
-          // 创建支付记录
-      const paymentRecord = await orderModel.createPaymentRecord({
-        orderId: payOrder.orderId,
-        userId,
-        paymentMethod: payOrder.paymentMethod,
-        paymentAmount: order.total,
-        transactionId: paymentData.transactionId,
-        paymentStatus: PaymentStatus.SUCCESS,
-      });
-    if (payOrder.paymentMethod === PaymentMethod.BALANCE) {
-          // 2.1 生成第三方交易ID（模拟）
+    // 2.1 生成第三方交易ID（模拟）
     const transactionId = `TXN${Date.now()}${Math.floor(Math.random() * 1000)
       .toString()
       .padStart(3, "0")}`;
 
-    // 2.2 调用第三方支付接口（模拟）
-    // 这里应该调用实际的支付SDK，如微信支付、支付宝等
-    paymentResult = await this.processPayment({
-      orderId: payOrder.orderId,
-      userId: userId,
-      amount: order.totalAmount,
-      paymentMethod: payOrder.paymentMethod,
+    // 创建支付记录
+    const paymentRecordId: number = await orderModel.createPaymentRecord({
+      //主要是为了填充id
+      id: 0,
+      orderId: orderId,
+      userId,
+      paymentMethod: order.paymentMethod,
+      paymentAmount: order.totalAmount,
       transactionId: transactionId,
-    }); 
+      paymentStatus: PaymentStatus.PENDING,
+    });
+    if (order.paymentMethod === PaymentMethod.BALANCE) {
+      // 2.2 调用第三方支付接口（模拟）
+      // 这里应该调用实际的支付SDK，如微信支付、支付宝等
+      paymentResult = await this.processPaymentBalance({
+        orderId,
+        userId: userId,
+        amount: order.totalAmount,
+        paymentMethod: order.paymentMethod,
+        transactionId: transactionId,
+      });
+    } else {
+      //TODO 暂时没对接第三方
+      throw {
+        message: "不支持的支付方式",
+        code: HttpCode.VALIDATION_ERROR,
+      };
     }
 
     // 步骤3: 更新订单状态和支付记录
-    if (paymentResult.success) {
+    if (paymentResult.status === "success") {
       // 3.1 更新订单支付状态和订单状态
-      await orderModel.updateStatus(
-        payOrder.orderId,
+      await orderModel.updateStatusWithPay(
+        orderId,
+        paymentRecordId,
         OrderStatus.CONFIRMED,
+        OrderPaymentStatus.SUCCESS,
+        PaymentStatus.SUCCESS,
         userId,
         "支付成功"
       );
 
       // 3.2 记录支付成功日志
       businessLogger.info("订单支付成功", {
-        orderId: payOrder.orderId,
+        orderId: orderId,
         userId: userId,
         transactionId: transactionId,
         amount: order.totalAmount,
-        paymentMethod: payOrder.paymentMethod,
+        paymentMethod: order.paymentMethod,
       });
 
       return {
-        paymentId: paymentResult.paymentId,
-        orderId: payOrder.orderId,
-        paymentMethod: payOrder.paymentMethod,
-        paymentAmount: order.totalAmount,
+        paymentId: paymentRecordId,
+        orderId,
+        paymentMethod: order.paymentMethod,
+        paymentAmount: new Decimal(order.totalAmount),
         transactionId: transactionId,
         paymentStatus: PaymentStatus.SUCCESS,
       };
     } else {
       // 3.3 记录支付失败日志
       businessLogger.error("订单支付失败", {
-        orderId: payOrder.orderId,
+        orderId,
         userId: userId,
-        error: paymentResult.errorMessage,
+        error: paymentResult.message,
       });
 
       throw {
-        message: paymentResult.errorMessage || "支付失败",
+        message: paymentResult.message || "支付失败",
         code: HttpCode.INTERNAL_ERROR,
       };
     }
@@ -377,16 +398,15 @@ class OrderService {
    * @param paymentData - 支付数据
    * @returns 支付结果
    */
-  private async processPayment(paymentData: {
+  private async processPaymentBalance(paymentData: {
     orderId: number;
     userId: number;
-    amount: number;
+    amount: Decimal;
     paymentMethod: PaymentMethod;
     transactionId: string;
   }): Promise<{
-    success: boolean;
-    paymentId: number;
-    errorMessage?: string;
+    status: string;
+    message: string;
   }> {
     // 这里应该调用实际的第三方支付接口
     // 模拟支付处理时间
@@ -396,17 +416,14 @@ class OrderService {
     const success = Math.random() > 0.1; // 90%成功率
 
     if (success) {
-
-
       return {
-        success: true,
-        paymentId: paymentRecord.id,
+        status: "success",
+        message: "支付成功",
       };
     } else {
       return {
-        success: false,
-        paymentId: 0,
-        errorMessage: "支付处理失败，请重试",
+        status: "fail",
+        message: "支付处理失败，请重试",
       };
     }
   }
@@ -443,83 +460,92 @@ class OrderService {
         code: HttpCode.VALIDATION_ERROR,
       };
     }
-    if (order.paymentStatus !== PaymentStatus.SUCCESS) {
+    if (order.paymentStatus !== OrderPaymentStatus.SUCCESS) {
       throw {
         message: "订单未支付成功，无法退款",
         code: HttpCode.VALIDATION_ERROR,
       };
     }
 
-    // 步骤2: 校验退款金额
-    const refundAmount = refundOrder.amount || order.totalAmount;
-    if (refundAmount <= 0) {
-      throw { message: "退款金额必须大于0", code: HttpCode.VALIDATION_ERROR };
-    }
-    if (refundAmount > order.totalAmount) {
-      throw {
-        message: "退款金额不能超过订单总金额",
-        code: HttpCode.VALIDATION_ERROR,
-      };
-    }
-
-    // 步骤3: 查询支付记录用于退款
+    // 步骤2: 查询支付记录用于退款
     const paymentRecord = await orderModel.findPaymentRecord(
       refundOrder.orderId,
-      payment_records_payment_status.success
+      PaymentStatus.SUCCESS
     );
 
     if (!paymentRecord) {
       throw { message: "未找到有效的支付记录", code: HttpCode.NOT_FOUND };
     }
 
-    // 步骤4: 处理退款逻辑
-    const refundResult = await this.processRefund({
+    // 步骤3: 处理退款逻辑,构建退款逻辑对象
+    // 创建退款记录
+    let refundResult = {
+      status: "pending",
+      message: "",
+    };
+
+    const refundRecord: RefundRecord = {
       orderId: refundOrder.orderId,
-      userId: userId,
+      userId,
       paymentRecordId: paymentRecord.id,
-      refundAmount: refundAmount,
+      refundAmount: paymentRecord.paymentAmount,
       refundReason: refundOrder.reason,
-      originalAmount: order.totalAmount,
-    });
+      refundType: RefundType.FULL,
+      id: 0,
+      refundStatus: RefundStatus.PENDING,
+      processorType: ProcessorType.USER,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const refundId = await orderModel.createRefundRecord(refundRecord);
+    // 步骤3: 处理退款逻辑,构建退款逻辑对象
+    if (paymentRecord.paymentMethod === PaymentMethod.BALANCE) {
+      refundResult = await this.processRefundBalance();
+    } else {
+      //TODO 还没对接第三方退款接口
+      throw { message: "不支持的退款类型", code: HttpCode.NOT_FOUND };
+    }
 
     // 步骤5: 更新订单状态
-    if (refundResult.success) {
-      // 如果是全额退款，取消订单；部分退款则更新订单状态
-      if (refundAmount >= order.totalAmount) {
-        await orderModel.updateStatus(
-          refundOrder.orderId,
-          OrderStatus.CANCELLED,
-          userId,
-          "全额退款"
-        );
-      }
+    if (refundResult.status === "success") {
+      await orderModel.updateStatusWithRefund(
+        refundOrder.orderId,
+        refundId,
+        OrderStatus.CANCELLED,
+        OrderPaymentStatus.REFUNDED,
+        RefundStatus.COMPLETED,
+        userId,
+        refundOrder.reason
+      );
 
       businessLogger.info("订单退款成功", {
         orderId: refundOrder.orderId,
         userId: userId,
-        refundAmount: refundAmount,
-        refundId: refundResult.refundId,
+        refundAmount: refundRecord.refundAmount,
+        refundId: refundId,
       });
-
       return {
-        refundId: refundResult.refundId,
+        refundId,
         orderId: refundOrder.orderId,
-        refundAmount: refundAmount,
-        refundStatus: refundResult.refundStatus,
-        refundType:
-          refundAmount >= order.totalAmount
-            ? RefundType.FULL
-            : RefundType.PARTIAL,
+        refundAmount: refundRecord.refundAmount,
+        refundStatus: RefundStatus.COMPLETED,
+        refundType: RefundType.FULL,
       };
     } else {
+      await orderModel.updateRefundRecordStatus(
+        refundId,
+        RefundStatus.COMPLETED
+      );
+
       businessLogger.error("订单退款失败", {
         orderId: refundOrder.orderId,
         userId: userId,
-        error: refundResult.errorMessage,
+        error: refundResult.message,
       });
 
       throw {
-        message: refundResult.errorMessage || "退款失败",
+        message: refundResult.message || "退款失败",
         code: HttpCode.INTERNAL_ERROR,
       };
     }
@@ -530,18 +556,10 @@ class OrderService {
    * @param refundData - 退款数据
    * @returns 退款结果
    */
-  private async processRefund(refundData: {
-    orderId: number;
-    userId: number;
-    paymentRecordId: number;
-    refundAmount: number;
-    refundReason: string;
-    originalAmount: number;
-  }): Promise<{
-    success: boolean;
-    refundId: number;
-    refundStatus: any;
-    errorMessage?: string;
+  private async processRefundBalance(): Promise<{
+    status: string;
+    refundTxnNo?: string;
+    message: string;
   }> {
     // 模拟退款处理时间
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -549,31 +567,21 @@ class OrderService {
     // 模拟退款成功（实际应用中这里会调用第三方退款接口）
     const success = Math.random() > 0.1; // 90%成功率
 
-    if (success) {
-      // 创建退款记录
-      const refundRecord = await orderModel.createRefundRecord({
-        orderId: refundData.orderId,
-        userId: refundData.userId,
-        paymentRecordId: refundData.paymentRecordId,
-        refundAmount: refundData.refundAmount,
-        refundReason: refundData.refundReason,
-        refundType:
-          refundData.refundAmount >= refundData.originalAmount
-            ? "full"
-            : "partial",
-      });
+    //模拟的第三方退款id
+    const transactionId = `REFUND${Date.now()}${Math.floor(Math.random() * 1000)
+      .toString()
+      .padStart(3, "0")}`;
 
+    if (success) {
       return {
-        success: true,
-        refundId: refundRecord.id,
-        refundStatus: refundRecord.refundStatus,
+        status: "success",
+        refundTxnNo: transactionId,
+        message: "chenggong",
       };
     } else {
       return {
-        success: false,
-        refundId: 0,
-        refundStatus: null,
-        errorMessage: "退款处理失败，请重试",
+        status: "fail",
+        message: "退款处理失败，请重试",
       };
     }
   }
@@ -585,16 +593,16 @@ class OrderService {
    * @returns 确认结果
    */
   async confirmOrder(
-    confirmOrder: ConfirmOrderRequest,
+    orderId: number,
     userId: number
   ): Promise<ConfirmOrderResponse> {
     businessLogger.info("开始执行确认收货", {
-      orderId: confirmOrder.orderId,
+      orderId,
       userId,
     });
 
     // 步骤1: 校验订单信息
-    const order = await orderModel.findById(confirmOrder.orderId);
+    const order = await orderModel.findById(orderId);
     if (!order) {
       throw { message: "订单不存在", code: HttpCode.NOT_FOUND };
     }
@@ -613,21 +621,85 @@ class OrderService {
     // 步骤3: 更新订单状态为已完成
     const completedAt = new Date();
     await orderModel.updateStatus(
-      confirmOrder.orderId,
+      orderId,
       OrderStatus.COMPLETED,
       userId,
       "用户确认收货"
     );
 
     businessLogger.info("确认收货成功", {
-      orderId: confirmOrder.orderId,
+      orderId,
       userId: userId,
       completedAt: completedAt,
     });
 
     return {
-      orderId: confirmOrder.orderId,
+      orderId,
       orderStatus: OrderStatus.COMPLETED,
+      completedAt: completedAt,
+    };
+  }
+
+  /**
+   * 切换状态
+   * @param userId - 用户ID
+   * @returns 确认结果
+   */
+  async changeStatus(
+    orderId: number,
+    orderStatus: OrderStatus,
+    userId: number
+  ): Promise<ConfirmOrderResponse> {
+    businessLogger.info("开始执行状态切换", {
+      orderId,
+      orderStatus,
+      userId,
+    });
+
+    // 步骤1: 校验订单信息
+    const order = await orderModel.findById(orderId);
+    if (!order) {
+      throw { message: "订单不存在", code: HttpCode.NOT_FOUND };
+    }
+    if (order.userId !== userId) {
+      throw { message: "无权操作该订单", code: HttpCode.FORBIDDEN };
+    }
+
+    let remark;
+
+    switch (orderStatus) {
+      case OrderStatus.PREPARING:
+        remark = "商家接单";
+
+        //如果前置状态不是created,则报错
+        if (order.orderStatus !== OrderStatus.CONFIRMED) {
+          throw { message: "前置状态不对", code: HttpCode.FORBIDDEN };
+        }
+        break;
+      case OrderStatus.DELIVERING:
+        remark = "骑手接单";
+        //如果前置状态不是PREPARING,则报错
+        if (order.orderStatus !== OrderStatus.PREPARING) {
+          throw { message: "前置状态不对", code: HttpCode.FORBIDDEN };
+        }
+        break;
+      default:
+        throw { message: "不支持的状态修改", code: HttpCode.FORBIDDEN };
+    }
+
+    // 步骤3: 更新订单状态
+    const completedAt = new Date();
+    await orderModel.updateStatus(orderId, orderStatus, userId, remark);
+
+    businessLogger.info("确认修改状态成功", {
+      orderId,
+      userId: userId,
+      completedAt: completedAt,
+    });
+
+    return {
+      orderId,
+      orderStatus,
       completedAt: completedAt,
     };
   }
@@ -675,8 +747,8 @@ class OrderService {
         total: total,
         pages: totalPages,
         hasNext: currentPage < totalPages,
-        hasPrev: currentPage > 1
-      }
+        hasPrev: currentPage > 1,
+      },
     };
   }
 
@@ -746,7 +818,12 @@ class OrderService {
   async getOrderStatistics(
     userId: number,
     params: GetOrderStatisticsRequest = {}
-  ): Promise<GetOrderStatisticsResponse> {
+  ): Promise<{
+    totalOrders: number;      // 用户所有订单数量
+    pendingPaymentOrders: number;  // 用户待支付的订单数量(订单状态为created)
+    deliveringOrders: number;  // 正在配送中的订单数量(订单状态为delivering)
+    completedOrders: number;   // 用户已经收货的订单数量(订单状态为completed)
+  }> {
     businessLogger.info("开始获取订单统计", { userId, params });
 
     // 步骤1: 处理日期参数
@@ -760,25 +837,19 @@ class OrderService {
       endDate
     );
 
-    // 步骤3: 计算平均订单金额
-    const averageAmount =
-      statistics.completedOrders > 0
-        ? statistics.totalAmount / statistics.completedOrders
-        : 0;
-
     businessLogger.info("获取订单统计成功", {
       userId: userId,
       totalOrders: statistics.totalOrders,
+      pendingPaymentOrders: statistics.pendingPaymentOrders,
+      deliveringOrders: statistics.deliveringOrders,
       completedOrders: statistics.completedOrders,
-      totalAmount: statistics.totalAmount,
     });
 
     return {
       totalOrders: statistics.totalOrders,
+      pendingPaymentOrders: statistics.pendingPaymentOrders,
+      deliveringOrders: statistics.deliveringOrders,
       completedOrders: statistics.completedOrders,
-      cancelledOrders: statistics.cancelledOrders,
-      totalAmount: statistics.totalAmount,
-      averageAmount: averageAmount,
     };
   }
 
@@ -1013,16 +1084,16 @@ class OrderService {
    * @returns 配送信息
    */
   async getDeliveryInfo(
-    params: GetDeliveryInfoRequest,
+    orderId: number,
     userId: number
   ): Promise<GetDeliveryInfoResponse> {
     businessLogger.info("开始获取配送信息", {
-      orderId: params.orderId,
+      orderId: orderId,
       userId,
     });
 
     // 步骤1: 校验订单信息
-    const order = await orderModel.findById(params.orderId);
+    const order = await orderModel.findById(orderId);
     if (!order) {
       throw { message: "订单不存在", code: HttpCode.NOT_FOUND };
     }
@@ -1031,7 +1102,7 @@ class OrderService {
     }
 
     // 步骤2: 使用model查询配送信息
-    const deliveryInfo = await orderModel.getDeliveryInfo(params.orderId);
+    const deliveryInfo = await orderModel.getDeliveryInfo(orderId);
 
     if (!deliveryInfo) {
       throw { message: "配送信息不存在", code: HttpCode.NOT_FOUND };
@@ -1055,7 +1126,7 @@ class OrderService {
     }
 
     businessLogger.info("获取配送信息成功", {
-      orderId: params.orderId,
+      orderId: orderId,
       userId: userId,
       deliveryStatus: deliveryInfo.deliveryStatus,
     });
