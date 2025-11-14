@@ -35,6 +35,7 @@ import orderModel from "../models/order.model";
 import restaurantModel from "../../..//modules/restaurant/models/restaurant.model";
 import addressModel from "../../..//modules/user/models/address.model";
 import { HttpCode } from "../../..//types/index";
+import { log } from "console";
 
 class OrderService {
   /**
@@ -418,6 +419,7 @@ class OrderService {
         message: "支付成功",
       };
     } else {
+      businessLogger.error('挡板系统模拟失败')
       return {
         status: "fail",
         message: "支付处理失败，请重试",
@@ -576,6 +578,7 @@ class OrderService {
         message: "chenggong",
       };
     } else {
+            businessLogger.error('挡板系统模拟失败')
       return {
         status: "fail",
         message: "退款处理失败，请重试",
