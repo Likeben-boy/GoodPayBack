@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import logger, { dbLogger, businessLogger } from "@/utils/logger";
+import logger, { dbLogger, businessLogger } from "../../../utils/logger";
 import {
   User,
   CreateUserInput,
@@ -11,8 +11,8 @@ import {
   UpdateAddressInput,
   LoginResult,
   TokenPair,
-} from "@/modules/user/models/user";
-import { generateToken, verifyAccessToken } from "@/utils/jwt";
+} from "../../../modules/user/models/user";
+import { generateToken, verifyAccessToken } from "../../../utils/jwt";
 import userModel from "../models/user.model";
 import addressModel from "../models/address.model";
 

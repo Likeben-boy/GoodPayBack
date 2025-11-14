@@ -1,0 +1,68 @@
+# 依赖目录
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 构建输出目录
+dist
+
+#接口调试文件
+apifox
+
+# 日志文件
+logs
+*.log
+
+# 环境变量文件
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE 和编辑器文件
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# Git 目录
+.git
+.gitignore
+
+# Docker 文件
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# 测试覆盖率报告
+coverage
+
+# 临时文件
+tmp
+temp
+
+# 上传文件目录
+uploads
+
+# PM2 文件
+.pm2
+
+# 缓存目录
+.cache
+.parcel-cache
+
+# TypeScript 编译缓存
+*.tsbuildinfo
+
+# 文档
+README.md
+docs
+
+# 本地配置文件
+src/config/local.ts

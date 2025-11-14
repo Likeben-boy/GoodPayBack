@@ -1,4 +1,4 @@
-import { prisma, softDelete, paginate } from "@/database/prisma";
+import { prisma, paginate } from "../../../database/prisma";
 import { User, CreateUserInput, UpdateUserInput } from "./user";
 
 class UserModel {

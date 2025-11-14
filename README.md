@@ -353,12 +353,125 @@ pm2 logs goodpayback
 
 ### Docker部署
 
+#### 1. 快速开始（使用外部数据库）
+
 ```bash
-# 构建镜像
+# 构建 Docker 镜像
 docker build -t goodpayback-api .
 
+# 运行容器（后台运行）
+docker run -d \
+  --name goodpayback-api \
+  -p 3000:3000 \
+  --restart unless-stopped \
+  goodpayback-api
+```
+
+> ⚠️ **重要提示**: 不使用 `--env-file .env` 参数，因为应用会自动读取容器内的 `.env` 文件。确保 `.env` 文件已正确配置并包含 `DATABASE_URL` 等必要的环境变量。
+
+#### 2. 镜像导出与导入（离线部署）
+
+如果你需要在没有网络连接的服务器上部署，可以使用以下方法导出和导入镜像：
+
+**导出镜像（在本地机器）：**
+
+```bash
+# 导出镜像到文件
+docker save -o goodpayback-api.tar goodpayback-api
+
+# 或者使用 gzip 压缩（文件更小）
+docker save goodpayback-api | gzip > goodpayback-api.tar.gz
+
+# 传输到服务器
+scp goodpayback-api.tar.gz username@server-ip:/path/on/server/
+```
+
+**导入镜像（在服务器）：**
+
+```bash
+# 导入镜像（如果压缩了，先解压）
+gunzip -c goodpayback-api.tar.gz | docker load
+
+# 或者如果未压缩：
+docker load -i goodpayback-api.tar
+
+# 验证镜像是否导入成功
+docker images | grep goodpayback-api
+
 # 运行容器
-docker run -p 3000:3000 --env-file .env goodpayback-api
+docker run -d \
+  --name goodpayback-api \
+  -p 3000:3000 \
+  --restart unless-stopped \
+  goodpayback-api
+```
+
+#### 3. 使用 Docker Compose（包含数据库）
+
+```bash
+# 启动所有服务（应用 + MySQL + Redis）
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f app
+
+# 停止所有服务
+docker-compose down
+```
+
+#### 4. 容器管理命令
+
+```bash
+# 查看运行中的容器
+docker ps
+
+# 查看容器日志
+docker logs -f goodpayback-api
+
+# 进入容器内部
+docker exec -it goodpayback-api sh
+
+# 停止容器
+docker stop goodpayback-api
+
+# 启动容器
+docker start goodpayback-api
+
+# 重启容器
+docker restart goodpayback-api
+
+# 删除容器
+docker rm goodpayback-api
+
+# 删除镜像
+docker rmi goodpayback-api
+```
+
+#### 5. 数据库迁移
+
+```bash
+# 进入应用容器
+docker exec -it goodpayback-api sh
+
+# 运行数据库迁移
+npx prisma migrate deploy
+
+# 查看数据库状态
+npx prisma db pull
+```
+
+#### 6. 环境配置
+
+- **开发环境**: 使用 `.env.dev` 文件
+- **生产环境**: 使用 `.env` 文件
+- **Docker**: 自动读取 `.env` 文件中的配置
+
+确保 `.env` 文件包含正确的数据库连接信息：
+
+```bash
+DATABASE_URL="mysql://username:password@your-db-server:3306/goodpayback"
+NODE_ENV=production
+PORT=3000
 ```
 
 ## 🤝 贡献指南

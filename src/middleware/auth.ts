@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { ApiResponse, JwtPayload, HttpCode } from "@/types/index";
-import logger, { securityLogger } from "@/utils/logger";
-import { verifyAccessToken } from "@/utils/jwt";
+import { ApiResponse, JwtPayload, HttpCode } from "../types";
+import logger, { securityLogger } from "../utils/logger";
+import { verifyAccessToken } from "../utils/jwt";
 
 // 扩展Request接口以包含用户信息
 declare global {

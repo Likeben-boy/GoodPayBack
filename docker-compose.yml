@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: goodpayback-api
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env
+    restart: unless-stopped
+    depends_on:
+      - db
+    volumes:
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+    networks:
+      - goodpayback-network
+
+  db:
+    image: mysql:8.0
+    container_name: goodpayback-db
+    environment:
+      MYSQL_ROOT_PASSWORD: your_root_password
+      MYSQL_DATABASE: goodpayback
+      MYSQL_USER: goodpayback_user
+      MYSQL_PASSWORD: your_user_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+    networks:
+      - goodpayback-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: goodpayback-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - goodpayback-network
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  goodpayback-network:
+    driver: bridge

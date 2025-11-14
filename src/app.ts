@@ -17,7 +17,7 @@ import { generalLimiter } from "./middleware/rateLimiter";
 
 // 导入工具
 import { ApiResponse, HttpCode } from "./types";
-import { businessLogger } from "@/utils/logger";
+import { businessLogger } from "./utils/logger";
 
 // 创建Express应用
 const app: Express = express();

@@ -26,15 +26,15 @@
     "emitDecoratorMetadata": true,
     "moduleResolution": "node",        // 使用 Node.js 的模块解析
     "baseUrl": "./src",
-    "paths": {
-      "@/*": [".*"],
-      "@/config/*": ["config/*"],
-      "@/utils/*": ["utils/*"],
-      "@/middleware/*": ["middleware/*"],
-      "@/modules/*": ["modules/*"],
-      "@/database/*": ["database/*"],
-      "@/types/*": ["types/*"],
-    }
+    // "paths": {
+    //   "@/*": ["./*"],
+    //   "@/config/*": ["config/*"],
+    //   "@/utils/*": ["utils/*"],
+    //   "@/middleware/*": ["middleware/*"],
+    //   "@/modules/*": ["modules/*"],
+    //   "@/database/*": ["database/*"],
+    //   "@/types/*": ["types/*"],
+    // }
   },
   "include": [
     "src/**/*"

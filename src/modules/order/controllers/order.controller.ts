@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import orderService from '../services/order.service';
 import { successResponse, errorResponse } from '../../../utils/response';
 import logger, { businessLogger, securityLogger } from '../../../utils/logger';
-import { HttpCode } from '@/types/index';
+import { HttpCode } from '../../..//types/index';
 import { OrderStatus, GetOrderHistoryRequest } from '../models/order';
 
 class OrderController {

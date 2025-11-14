@@ -1,4 +1,4 @@
-import { prisma } from "@/database/prisma";
+import { prisma } from "../../../database/prisma";
 import { CreateAddressInput, UpdateAddressInput,Address } from "./user";
 
 class AddressModel {

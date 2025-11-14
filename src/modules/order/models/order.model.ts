@@ -1,4 +1,4 @@
-import { prisma } from "@/database/prisma";
+import { prisma } from "../../../database/prisma";
 import {
   payment_records_payment_method,
   payment_records_payment_status,
@@ -13,7 +13,7 @@ import {
   OrderPaymentStatus,
   RefundStatus,
 } from "./order";
-import { HttpCode } from "@/types/index";
+import { HttpCode } from "../../../types/index";
 
 class OrderModel {
   /**

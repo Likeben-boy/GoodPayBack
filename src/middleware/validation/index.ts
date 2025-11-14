@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { validationResult, ValidationChain } from 'express-validator';
 import { ApiResponse, ValidationError,HttpCode } from '../../types';
-import logger, {  businessLogger } from '@/utils/logger';
+import {  businessLogger } from '../../utils/logger';
 
 /**
  * 验证中间件
