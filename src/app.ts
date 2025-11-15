@@ -1,7 +1,6 @@
 import express, { Express, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
-import morgan from "morgan";
 import config from "./config/index.js";
 import { authMiddleware } from "./middleware/auth";
 
@@ -33,9 +32,6 @@ app.use(
 
 // 限流中间件
 app.use(generalLimiter);
-
-// 日志中间件
-app.use(morgan("combined"));
 
 // 解析中间件
 app.use(express.json({ limit: "10mb" }));
